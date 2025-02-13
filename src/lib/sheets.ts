@@ -99,7 +99,7 @@ const fallbackTools: AITool[] = [
 async function fetchFromSheet<T>(sheet: string, mapper: (row: any[]) => T, fallback: T[]): Promise<T[]> {
   try {
     if (!SHEET_ID || !API_KEY) {
-      console.warn('Missing credentials:', { SHEET_ID: !!SHEET_ID, API_KEY: !!API_KEY });
+      console.warn('Missing Google Sheets credentials:', { SHEET_ID: !!SHEET_ID, API_KEY: !!API_KEY });
       return fallback;
     }
 
@@ -116,7 +116,7 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: any[]) => T, fallb
         error: errorData,
         url: url.replace(API_KEY, '***')
       });
-      return fallback;
+      throw new Error(`Failed to fetch ${sheet}: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -134,7 +134,7 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: any[]) => T, fallb
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
     });
-    return fallback;
+    throw error; // Re-throw the error for SWR to handle
   }
 }
 

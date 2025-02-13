@@ -3,7 +3,7 @@ import { Hero } from '../components/Hero';
 import { Services } from '../components/Services';
 import { Process } from '../components/Process';
 import { Contact } from '../components/Contact';
-import { RecentProjects } from '../components/RecentProjects';
+import RecentProjects from '../components/RecentProjects';
 import { Pricing } from '../components/Pricing';
 
 export function Home() {

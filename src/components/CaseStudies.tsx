@@ -42,7 +42,7 @@ export function CaseStudies() {
       className="min-h-screen py-24 relative flex flex-col"
     >
       <div className="px-4 mb-12">
-        <h2 className={`text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-8 transition-all duration-1000 ${
+        <h2 className={`text-3xl md:text-5xl font-bold text-white mb-8 text-center transition-all duration-1000 ${
           isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
         }`}>
           Case Studies

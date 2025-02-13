@@ -30,7 +30,7 @@ export function Process() {
   return (
     <section ref={ref} className="min-h-screen py-24 relative">
       <div className="max-w-7xl mx-auto px-4">
-        <h2 className={`text-3xl md:text-5xl font-bold text-white mb-16 transition-all duration-1000 section-title ${
+        <h2 className={`text-3xl md:text-5xl font-bold text-white mb-8 text-center transition-all duration-1000 ${
           isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
         }`}>
           Our Process

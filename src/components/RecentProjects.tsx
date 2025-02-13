@@ -1,229 +1,202 @@
 import { useInView } from '../hooks/useInView';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
+import { ExternalLink, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '../lib/utils';
 import useSWR from 'swr';
 import { fetchProjects, type Project } from '../lib/sheets';
-import { ExternalLink, Loader2, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
 
-function ProjectCard({ project, index, isVisible }: { 
+const fallbackProjects: Project[] = []; // Define fallback projects here
+
+function ProjectCard({ project, index, hasAnimated, isSelected }: { 
   project: Project; 
   index: number;
-  isVisible: boolean;
+  hasAnimated: boolean;
+  isSelected: boolean;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
   return (
     <div
-      ref={cardRef}
-      className={`group transition-all duration-[2000ms] ease-out ${
-        isVisible
-          ? 'translate-y-0 opacity-100'
-          : 'translate-y-20 opacity-0'
-      } snap-center flex-none w-[90vw] md:w-[60vw] lg:w-[50vw] px-4`}
-      style={{ 
-        transitionDelay: `${index * 150}ms`,
+      className={cn(
+        "group relative rounded-xl shadow-lg overflow-hidden transition-all duration-1000 transform aspect-[16/9]",
+        isSelected 
+          ? "scale-110 z-10 md:w-[120%] md:-ml-[10%] w-full" 
+          : "scale-95 opacity-50 w-full",
+        hasAnimated ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0"
+      )}
+      style={{
+        transitionDelay: `${index * 100}ms`,
+        transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)"
       }}
     >
-      <div className="h-full bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500">
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full text-left focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-inset rounded-t-2xl"
-        >
-          <div className="relative h-80 overflow-hidden">
-            <img
-              src={project.image}
-              alt={project.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2000ms] ease-out"
-            />
-          </div>
-          <div className="p-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-white">
-                {project.title}
-              </h3>
-              <ChevronDown
-                className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
-                  isExpanded ? 'rotate-180' : ''
-                }`}
-              />
-            </div>
-          </div>
-        </button>
+      {/* Full-size image background */}
+      <div className="absolute inset-0">
+        <img
+          src={project.image}
+          alt={project.title}
+          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+          loading="lazy"
+        />
+        {!isSelected && (
+          <div className="absolute inset-0 bg-black/40 transition-opacity duration-1000" />
+        )}
+      </div>
 
-        <div
-          className={`transition-all duration-500 ease-in-out ${
-            isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-          } overflow-hidden`}
-        >
-          <div className="p-6 pt-0">
-            <p className="text-slate-200 mb-6">
-              {project.description}
-            </p>
-            
-            <div className="flex flex-wrap gap-2 mb-6">
-              {project.technologies.map((tech) => (
-                <span
-                  key={tech}
-                  className="px-3 py-1 rounded-full text-sm bg-sky-800 text-sky-50"
-                >
-                  {tech}
-                </span>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-slate-300">
-                Type: <span className="text-sky-400">{project.type}</span>
-              </div>
-              
-              {project.link && (
-                <a
-                  href={project.link.startsWith('http') ? project.link : `https://${project.link}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 text-white hover:bg-sky-500 transition-colors"
-                >
-                  View Live Site
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
-            </div>
-          </div>
+      {/* Glass-morphic text overlay */}
+      <div className={cn(
+        "absolute inset-x-0 bottom-0 p-4 md:p-6 backdrop-blur-md bg-black/30 transition-all duration-1000",
+        isSelected ? "translate-y-0" : "translate-y-2 group-hover:translate-y-0"
+      )}>
+        <div className="relative z-10">
+          <h3 className="text-lg md:text-xl font-semibold mb-2 text-white">{project.title}</h3>
+          <p className="text-sm md:text-base text-gray-200 mb-4 line-clamp-2 opacity-90">{project.description}</p>
+          {project.link && (
+            <a
+              href={project.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center text-sky-300 hover:text-sky-200 transition-colors text-sm md:text-base"
+            >
+              View Project <ExternalLink className="ml-1 w-4 h-4" />
+            </a>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-export function RecentProjects() {
+export default function RecentProjects() {
+  const { data: projects, error } = useSWR<Project[]>('projects', fetchProjects, {
+    fallbackData: fallbackProjects,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 60000, // 1 minute
+    onError: (err) => {
+      console.error('Error loading projects:', err);
+    }
+  });
   const [ref, isVisible] = useInView({ threshold: 0.1 });
-  const { data: projects, error, isLoading } = useSWR('projects', fetchProjects);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [prevBtnEnabled, setPrevBtnEnabled] = useState(false);
+  const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
 
-  const scrollToProject = (index: number) => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
+  const autoplayOptions = useRef([
+    Autoplay({
+      delay: 4000,
+      stopOnInteraction: false,
+      stopOnMouseEnter: true,
+      rootNode: (emblaRoot) => emblaRoot.parentElement,
+    }),
+  ]);
+  
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      align: 'center',
+      containScroll: 'trimSnaps',
+      dragFree: true,
+      loop: true
+    },
+    autoplayOptions.current
+  );
 
-    const cards = container.children;
-    if (index >= 0 && index < cards.length) {
-      cards[index].scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center'
-      });
-      setActiveIndex(index);
-    }
-  };
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
-  const handleScroll = () => {
-    const container = scrollContainerRef.current;
-    if (!container || !projects) return;
-
-    // Calculate the center point of the viewport
-    const viewportCenter = container.scrollLeft + container.offsetWidth / 2;
-    
-    // Find which card's center is closest to the viewport center
-    let closestIndex = 0;
-    let minDistance = Infinity;
-    
-    Array.from(container.children).forEach((child, index) => {
-      const rect = child.getBoundingClientRect();
-      const cardCenter = container.scrollLeft + rect.left + rect.width / 2;
-      const distance = Math.abs(viewportCenter - cardCenter);
-      
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestIndex = index;
-      }
-    });
-    
-    if (closestIndex !== activeIndex) {
-      setActiveIndex(closestIndex);
-    }
-  };
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+    setPrevBtnEnabled(emblaApi.canScrollPrev());
+    setNextBtnEnabled(emblaApi.canScrollNext());
+  }, [emblaApi]);
 
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+      emblaApi.off('reInit', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  useEffect(() => {
+    if (isVisible && !hasAnimated) {
+      setHasAnimated(true);
     }
-  }, [activeIndex]);
+  }, [isVisible, hasAnimated]);
+
+  if (error) return (
+    <div className="min-h-[50vh] flex items-center justify-center text-red-400">
+      Failed to load projects. Please try again later.
+    </div>
+  );
+  
+  if (!projects) return (
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-custom-blue" />
+    </div>
+  );
 
   return (
-    <section ref={ref} className="min-h-screen py-24 relative">
-      <div className="max-w-7xl mx-auto px-4">
-        <h2 className={`text-3xl md:text-5xl font-bold text-white mb-16 transition-all duration-1000 section-title ${
+    <section 
+      ref={ref} 
+      className="py-24 bg-black/5"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div className="container mx-auto px-4">
+        <h2 className={`text-3xl md:text-5xl font-bold text-white mb-8 text-center transition-all duration-1000 ${
           isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
         }`}>
           Recent Projects
         </h2>
-
-        {isLoading && (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="w-8 h-8 text-sky-600 animate-spin" />
-          </div>
-        )}
-
-        {error && (
-          <div className="text-center text-red-600 dark:text-red-400 py-12">
-            <p>Failed to load projects. Please try again later.</p>
-          </div>
-        )}
-
-        {projects && (
-          <div className="relative">
-            <div
-              ref={scrollContainerRef}
-              className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none -mx-8 px-4 pb-8 scroll-smooth"
-            >
+        
+        <div className="relative max-w-6xl mx-auto">
+          <div 
+            className="overflow-hidden py-20" 
+            ref={emblaRef}
+          >
+            <div className="flex gap-12">
               {projects.map((project, index) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  index={index}
-                  isVisible={isVisible}
-                />
-              ))}
-            </div>
-
-            <button
-              onClick={() => scrollToProject(activeIndex - 1)}
-              className={`absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-gray-800/80 backdrop-blur-sm text-white transition-opacity ${
-                activeIndex === 0 ? 'opacity-0' : 'opacity-100'
-              }`}
-              disabled={activeIndex === 0}
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-
-            <button
-              onClick={() => scrollToProject(activeIndex + 1)}
-              className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-gray-800/80 backdrop-blur-sm text-white transition-opacity ${
-                activeIndex === (projects.length - 1) ? 'opacity-0' : 'opacity-100'
-              }`}
-              disabled={activeIndex === projects.length - 1}
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-
-            <div className="flex justify-center gap-2 mt-8">
-              {projects.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => scrollToProject(index)}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    index === activeIndex
-                      ? 'bg-sky-500 w-6'
-                      : 'bg-gray-600 hover:bg-gray-500'
-                  }`}
-                  aria-label={`Go to project ${index + 1}`}
-                />
+                <div key={project.id} className="flex-[0_0_100%] min-w-0 sm:flex-[0_0_60%] lg:flex-[0_0_40%]">
+                  <ProjectCard
+                    project={project}
+                    index={index}
+                    hasAnimated={hasAnimated}
+                    isSelected={index === selectedIndex}
+                  />
+                </div>
               ))}
             </div>
           </div>
-        )}
+
+          {/* Navigation Buttons */}
+          <button
+            className={cn(
+              "absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white transition-all",
+              prevBtnEnabled ? "opacity-100 hover:bg-black/50" : "opacity-50 cursor-not-allowed"
+            )}
+            onClick={scrollPrev}
+            disabled={!prevBtnEnabled}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          <button
+            className={cn(
+              "absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white transition-all",
+              nextBtnEnabled ? "opacity-100 hover:bg-black/50" : "opacity-50 cursor-not-allowed"
+            )}
+            onClick={scrollNext}
+            disabled={!nextBtnEnabled}
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </div>
       </div>
     </section>
   );
