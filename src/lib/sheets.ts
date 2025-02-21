@@ -141,16 +141,23 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: any[]) => T, fallb
 export async function fetchProjects(): Promise<Project[]> {
   return fetchFromSheet<Project>(
     'Projects',
-    (row) => ({
-      id: row[0] || '',
-      title: row[1] || '',
-      description: row[2] || '',
-      technologies: (row[3] || '').split(',').map((tech: string) => tech.trim()),
-      client: row[4] || undefined,
-      type: row[5] || '',
-      image: row[6] || '',
-      link: row[7] || undefined,
-    }),
+    (row) => {
+      const rawLink = row[7] || undefined;
+      let formattedLink = rawLink;
+      if (rawLink && !rawLink.startsWith('http://') && !rawLink.startsWith('https://')) {
+        formattedLink = `https://${rawLink}`;
+      }
+      return {
+        id: row[0] || '',
+        title: row[1] || '',
+        description: row[2] || '',
+        technologies: (row[3] || '').split(',').map((tech: string) => tech.trim()),
+        client: row[4] || undefined,
+        type: row[5] || '',
+        image: row[6] || '',
+        link: formattedLink,
+      };
+    },
     fallbackProjects
   );
 }
