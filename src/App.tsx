@@ -5,6 +5,7 @@ import { Blog } from './pages/Blog';
 import { BlogPost } from './pages/BlogPost';
 import { AITools } from './pages/AITools';
 import { Navbar } from './components/Navbar';
+import { ProtectedPDF } from './pages/ProtectedPDF';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/ai-tools" element={<AITools />} />
+        <Route path="/pdf" element={<ProtectedPDF />} />
       </Routes>
     </div>
   );
