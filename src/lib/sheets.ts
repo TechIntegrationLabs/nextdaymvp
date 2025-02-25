@@ -206,55 +206,63 @@ export async function fetchAITools(): Promise<AITool[]> {
 export async function submitContactForm(data: ContactFormData): Promise<boolean> {
   try {
     if (!SHEET_ID || !API_KEY) {
-      console.error('Missing required environment variables for Google Sheets');
+      console.error('Missing required environment variables for Google Sheets:', {
+        hasSheetId: !!SHEET_ID,
+        hasApiKey: !!API_KEY
+      });
       return false;
     }
 
     const timestamp = new Date().toISOString();
-    const range = 'Contact!A2:D'; // Start from A2 to preserve header row
     
-    // First, get the current range to find the next empty row
-    const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`
-    );
+    // First, try to append directly without checking the range
+    const appendRange = 'Contact!A2:D';
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${API_KEY}`;
+    
+    console.log('Attempting to submit contact form...', {
+      sheetId: SHEET_ID.substring(0, 5) + '...',
+      range: appendRange,
+      hasData: !!data.name && !!data.email && !!data.message
+    });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch current range');
-    }
+    const appendResponse = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        range: appendRange,
+        majorDimension: 'ROWS',
+        values: [[data.name, data.email, data.message, timestamp]],
+      }),
+    });
 
-    const rangeData = await response.json();
-    const nextRow = (rangeData.values?.length || 0) + 2; // Add 2 to account for header row
-    const appendRange = `Contact!A${nextRow}:D${nextRow}`;
-
-    // Now append the new row
-    const appendResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          range: appendRange,
-          majorDimension: 'ROWS',
-          values: [[data.name, data.email, data.message, timestamp]],
-        }),
-      }
-    );
+    const responseText = await appendResponse.text();
+    console.log('Google Sheets API Response:', {
+      status: appendResponse.status,
+      statusText: appendResponse.statusText,
+      response: responseText.substring(0, 200) // Log first 200 chars of response
+    });
 
     if (!appendResponse.ok) {
-      const errorData = await appendResponse.text();
-      console.error('Failed to submit form:', {
-        status: appendResponse.status,
-        statusText: appendResponse.statusText,
-        error: errorData
-      });
-      throw new Error('Failed to submit form data to Google Sheets');
+      throw new Error(`Failed to submit form: ${appendResponse.status} ${appendResponse.statusText}`);
+    }
+
+    // Try to parse the response to make sure it's valid
+    try {
+      JSON.parse(responseText);
+    } catch (e) {
+      console.error('Invalid JSON response from Google Sheets API:', e);
+      throw new Error('Invalid response from server');
     }
 
     return true;
   } catch (error) {
-    console.error('Error submitting contact form:', error);
+    console.error('Error submitting contact form:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return false;
   }
 }

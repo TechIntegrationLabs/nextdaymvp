@@ -9,6 +9,7 @@ export function Contact() {
   const [ref, isVisible] = useInView({ threshold: 0.1 });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const { message } = useMessage();
 
   useEffect(() => {
@@ -23,20 +24,30 @@ export function Contact() {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus('idle');
+    setErrorMessage('');
 
     try {
       const form = e.currentTarget;
       const formData = new FormData(form);
       
+      // Validate form data
+      const name = formData.get('name') as string;
+      const email = formData.get('email') as string;
+      const messageText = formData.get('message') as string;
+
+      if (!name || !email || !messageText) {
+        throw new Error('Please fill in all required fields');
+      }
+
       const success = await submitContactForm({
-        name: formData.get('name') as string,
-        email: formData.get('email') as string,
-        message: formData.get('message') as string,
+        name,
+        email,
+        message: messageText,
         timestamp: new Date().toISOString()
       });
 
       if (!success) {
-        throw new Error('Failed to submit form');
+        throw new Error('Failed to submit form. Please try again.');
       }
 
       setSubmitStatus('success');
@@ -44,6 +55,7 @@ export function Contact() {
     } catch (error) {
       console.error('Error submitting form:', error);
       setSubmitStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
     }
@@ -173,7 +185,7 @@ export function Contact() {
             
             {submitStatus === 'error' && (
               <p className="text-red-400 text-sm text-center animate-fade-in">
-                There was an error sending your message. Please try again later.
+                {errorMessage || 'There was an error sending your message. Please try again later.'}
               </p>
             )}
           </form>
