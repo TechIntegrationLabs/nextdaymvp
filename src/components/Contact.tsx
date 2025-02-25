@@ -3,6 +3,7 @@ import { useInView } from '../hooks/useInView';
 import { useState, FormEvent, useEffect } from 'react';
 import { cn } from '../lib/utils';
 import { useMessage } from '../lib/MessageContext';
+import { submitContactForm } from '../lib/sheets';
 
 export function Contact() {
   const [ref, isVisible] = useInView({ threshold: 0.1 });
@@ -26,25 +27,16 @@ export function Contact() {
     try {
       const form = e.currentTarget;
       const formData = new FormData(form);
-
-      // In development, just log the form data
-      if (import.meta.env.DEV) {
-        console.log('Form submission (DEV):', Object.fromEntries(formData));
-        setSubmitStatus('success');
-        form.reset();
-        return;
-      }
-
-      // In production, Netlify will handle the form submission automatically
-      // We don't need to make a fetch request
-      const response = await fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(formData as any).toString()
+      
+      const success = await submitContactForm({
+        name: formData.get('name') as string,
+        email: formData.get('email') as string,
+        message: formData.get('message') as string,
+        timestamp: new Date().toISOString()
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+      if (!success) {
+        throw new Error('Failed to submit form');
       }
 
       setSubmitStatus('success');
@@ -58,18 +50,20 @@ export function Contact() {
   };
 
   return (
-    <section ref={ref} className="min-h-screen py-24 relative">
+    <section ref={ref} id="contact" className="min-h-screen py-24 relative">
       <div className="max-w-7xl mx-auto px-4">
-        <h2 className={`text-3xl md:text-5xl font-bold text-white mb-8 text-center transition-all duration-1000 ${
+        <h2 className={cn(
+          "text-3xl md:text-5xl font-bold text-white mb-8 text-center transition-all duration-1000",
           isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
-        }`}>
+        )}>
           Get in Touch
         </h2>
 
         <div className="grid md:grid-cols-2 gap-12">
-          <div className={`transition-all duration-500 ease-out ${
+          <div className={cn(
+            "transition-all duration-500 ease-out",
             isVisible ? 'translate-x-0 opacity-100' : '-translate-x-20 opacity-0'
-          }`}>
+          )}>
             <h3 className="text-2xl font-semibold mb-6 text-white">
               Let's Build Something Amazing
             </h3>
@@ -101,22 +95,12 @@ export function Contact() {
           </div>
 
           <form
-            name="contact"
-            method="POST"
-            netlify="true"
-            netlify-honeypot="bot-field"
+            onSubmit={handleSubmit}
             className={cn(
               "space-y-6 transition-all duration-500 ease-out",
               isVisible ? 'translate-x-0 opacity-100' : 'translate-x-20 opacity-0'
             )}
-            onSubmit={handleSubmit}
           >
-            <input type="hidden" name="form-name" value="contact" />
-            <p hidden>
-              <label>
-                Don't fill this out if you're human: <input name="bot-field" />
-              </label>
-            </p>
             <div>
               <label
                 htmlFor="name"

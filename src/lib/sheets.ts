@@ -23,6 +23,13 @@ export interface AITool {
   link: string;
 }
 
+export interface ContactFormData {
+  name: string;
+  email: string;
+  message: string;
+  timestamp: string;
+}
+
 const fallbackProjects: Project[] = [
   {
     id: '1',
@@ -194,4 +201,60 @@ export async function fetchAITools(): Promise<AITool[]> {
     }),
     fallbackTools
   );
+}
+
+export async function submitContactForm(data: ContactFormData): Promise<boolean> {
+  try {
+    if (!SHEET_ID || !API_KEY) {
+      console.error('Missing required environment variables for Google Sheets');
+      return false;
+    }
+
+    const timestamp = new Date().toISOString();
+    const range = 'Contact!A2:D'; // Start from A2 to preserve header row
+    
+    // First, get the current range to find the next empty row
+    const response = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch current range');
+    }
+
+    const rangeData = await response.json();
+    const nextRow = (rangeData.values?.length || 0) + 2; // Add 2 to account for header row
+    const appendRange = `Contact!A${nextRow}:D${nextRow}`;
+
+    // Now append the new row
+    const appendResponse = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          range: appendRange,
+          majorDimension: 'ROWS',
+          values: [[data.name, data.email, data.message, timestamp]],
+        }),
+      }
+    );
+
+    if (!appendResponse.ok) {
+      const errorData = await appendResponse.text();
+      console.error('Failed to submit form:', {
+        status: appendResponse.status,
+        statusText: appendResponse.statusText,
+        error: errorData
+      });
+      throw new Error('Failed to submit form data to Google Sheets');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error submitting contact form:', error);
+    return false;
+  }
 }
