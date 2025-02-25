@@ -1,11 +1,7 @@
 import { Mail, MessageSquare, Phone } from 'lucide-react';
 import { useInView } from '../hooks/useInView';
-import emailjs from '@emailjs/browser';
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent } from 'react';
 import { cn } from '../lib/utils';
-
-// Initialize EmailJS
-emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
 
 export function Contact() {
   const [ref, isVisible] = useInView({ threshold: 0.1 });
@@ -19,24 +15,22 @@ export function Contact() {
 
     try {
       const form = e.currentTarget;
-      console.log('Sending email with EmailJS...', {
-        serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
-        templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-        publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY?.slice(0, 5) + '...',
+      const formData = new FormData(form);
+
+      const response = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(formData).toString()
       });
 
-      const result = await emailjs.sendForm(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-        form,
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-      );
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
 
-      console.log('EmailJS response:', result);
       setSubmitStatus('success');
       form.reset();
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error submitting form:', error);
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
@@ -87,12 +81,16 @@ export function Contact() {
           </div>
 
           <form
+            name="contact"
+            method="POST"
+            data-netlify="true"
             className={cn(
               "space-y-6 transition-all duration-500 ease-out",
               isVisible ? 'translate-x-0 opacity-100' : 'translate-x-20 opacity-0'
             )}
             onSubmit={handleSubmit}
           >
+            <input type="hidden" name="form-name" value="contact" />
             <div>
               <label
                 htmlFor="name"
@@ -102,7 +100,7 @@ export function Contact() {
               </label>
               <input
                 type="text"
-                name="from_name"
+                name="name"
                 id="name"
                 required
                 className="w-full px-4 py-2 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-custom-blue focus:border-transparent transition-colors"
@@ -119,7 +117,7 @@ export function Contact() {
               </label>
               <input
                 type="email"
-                name="from_email"
+                name="email"
                 id="email"
                 required
                 className="w-full px-4 py-2 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-custom-blue focus:border-transparent transition-colors"
