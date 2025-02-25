@@ -1,8 +1,12 @@
 import { ArrowDown } from 'lucide-react';
+import { useState } from 'react';
 import AnimatedBackground from "./AnimatedBackground";
 import AnimatedLines from "./AnimatedLines";
+import { IdeaCapture } from './IdeaCapture';
 
 export function Hero() {
+  const [isIdeaCaptureOpen, setIsIdeaCaptureOpen] = useState(false);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <AnimatedBackground />
@@ -22,7 +26,10 @@ export function Hero() {
 
         {/* CTA Button */}
         <div className="mb-8 md:mb-12">
-          <button className="group relative inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium text-white bg-custom-blue rounded-full overflow-hidden transition-all hover:scale-105 hover:shadow-lg hover:shadow-custom-blue/20">
+          <button 
+            onClick={() => setIsIdeaCaptureOpen(true)}
+            className="group relative inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium text-white bg-custom-blue rounded-full overflow-hidden transition-all hover:scale-105 hover:shadow-lg hover:shadow-custom-blue/20"
+          >
             <span className="relative z-10 flex items-center">
               Get Started
               <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 ml-2 transform group-hover:translate-y-1 transition-transform" />
@@ -37,6 +44,11 @@ export function Hero() {
           <span className="block mt-2 text-slate-400">You're welcome.</span>
         </p>
       </div>
+
+      <IdeaCapture 
+        isOpen={isIdeaCaptureOpen}
+        onClose={() => setIsIdeaCaptureOpen(false)}
+      />
     </section>
   );
 }
