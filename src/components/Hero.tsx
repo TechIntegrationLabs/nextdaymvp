@@ -3,9 +3,11 @@ import { useState } from 'react';
 import AnimatedBackground from "./AnimatedBackground";
 import AnimatedLines from "./AnimatedLines";
 import { IdeaCapture } from './IdeaCapture';
+import { useMessage } from '../lib/MessageContext';
 
 export function Hero() {
   const [isIdeaCaptureOpen, setIsIdeaCaptureOpen] = useState(false);
+  const { setMessage } = useMessage();
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -48,6 +50,7 @@ export function Hero() {
       <IdeaCapture 
         isOpen={isIdeaCaptureOpen}
         onClose={() => setIsIdeaCaptureOpen(false)}
+        setMessage={setMessage}
       />
     </section>
   );

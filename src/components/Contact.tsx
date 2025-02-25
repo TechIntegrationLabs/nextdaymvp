@@ -1,12 +1,22 @@
 import { Mail, MessageSquare, Phone } from 'lucide-react';
 import { useInView } from '../hooks/useInView';
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { cn } from '../lib/utils';
+import { useMessage } from '../lib/MessageContext';
 
 export function Contact() {
   const [ref, isVisible] = useInView({ threshold: 0.1 });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const { message } = useMessage();
+
+  useEffect(() => {
+    const messageTextarea = document.getElementById('message') as HTMLTextAreaElement;
+    if (messageTextarea && message) {
+      messageTextarea.value = message;
+      messageTextarea.focus();
+    }
+  }, [message]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -17,10 +27,20 @@ export function Contact() {
       const form = e.currentTarget;
       const formData = new FormData(form);
 
-      const response = await fetch("/", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams(formData).toString()
+      // In development, just log the form data
+      if (import.meta.env.DEV) {
+        console.log('Form submission (DEV):', Object.fromEntries(formData));
+        setSubmitStatus('success');
+        form.reset();
+        return;
+      }
+
+      // In production, Netlify will handle the form submission automatically
+      // We don't need to make a fetch request
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(formData as any).toString()
       });
 
       if (!response.ok) {
@@ -83,7 +103,8 @@ export function Contact() {
           <form
             name="contact"
             method="POST"
-            data-netlify="true"
+            netlify="true"
+            netlify-honeypot="bot-field"
             className={cn(
               "space-y-6 transition-all duration-500 ease-out",
               isVisible ? 'translate-x-0 opacity-100' : 'translate-x-20 opacity-0'
@@ -91,6 +112,11 @@ export function Contact() {
             onSubmit={handleSubmit}
           >
             <input type="hidden" name="form-name" value="contact" />
+            <p hidden>
+              <label>
+                Don't fill this out if you're human: <input name="bot-field" />
+              </label>
+            </p>
             <div>
               <label
                 htmlFor="name"

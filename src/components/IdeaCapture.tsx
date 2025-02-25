@@ -2,15 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { useReactMediaRecorder } from 'react-media-recorder';
-import { Mic, StopCircle, RefreshCw, Download, Copy, Edit2 } from 'lucide-react';
+import { Mic, StopCircle, RefreshCw, Download, Copy, Edit2, MessageSquare } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface IdeaCaptureProps {
   isOpen: boolean;
   onClose: () => void;
+  setMessage: (message: string) => void;
 }
 
-export function IdeaCapture({ isOpen, onClose }: IdeaCaptureProps) {
+export function IdeaCapture({ isOpen, onClose, setMessage }: IdeaCaptureProps) {
   const [transcription, setTranscription] = useState('');
   const [processedIdea, setProcessedIdea] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -81,7 +82,31 @@ export function IdeaCapture({ isOpen, onClose }: IdeaCaptureProps) {
           model: "gpt-4",
           messages: [{
             role: "system",
-            content: "You are a professional project manager and business analyst. Your task is to take a client's raw idea description and organize it into a clear, structured outline. Focus on key business aspects, technical requirements, and actionable insights."
+            content: `You are a professional project manager and business analyst at Next Day MVP, an AI-powered app development agency. Your task is to take a client's raw idea description and organize it into a clear, structured outline.
+
+Key points to include in your analysis:
+1. Brief overview of the core concept and its unique value proposition
+2. Target audience and market potential
+3. Key features and functionality
+4. Technology stack recommendations
+
+Then, add these two important sections:
+1. Recommended Package:
+   - Based on the complexity and requirements, suggest one of our packages:
+   For Apps:
+   - Starter App ($1,350): Basic functionality, auth, mobile-responsive
+   - Growth App ($3,150): Advanced features, custom auth, real-time functionality
+   - Custom AI-Powered App ($6,300): AI/ML integration, custom algorithms
+   For Websites:
+   - Starter Website ($450): Modern design, up to 5 pages, basic SEO
+   - Growth Website ($1,050): Premium design, up to 10 pages, e-commerce ready
+   - Custom AI-Powered Website ($2,450): AI content generation, dynamic personalization
+   
+2. Monetization Potential:
+   - Briefly suggest 2-3 ways the product could generate revenue
+   - Focus on practical, achievable monetization strategies
+
+Keep the output concise and focused. Use bullet points for clarity. Avoid discussing timelines or detailed deliverables.`
           }, {
             role: "user",
             content: transcription
@@ -247,7 +272,7 @@ export function IdeaCapture({ isOpen, onClose }: IdeaCaptureProps) {
                       </div>
                     )}
 
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 flex-wrap">
                       <button
                         onClick={() => setIsEditing(!isEditing)}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg bg-custom-blue hover:bg-custom-blue/90 text-white font-medium transition-all"
@@ -270,6 +295,21 @@ export function IdeaCapture({ isOpen, onClose }: IdeaCaptureProps) {
                       >
                         <Download className="w-5 h-5" />
                         Download
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setMessage(processedIdea);
+                          onClose();
+                          const contactSection = document.getElementById('contact');
+                          if (contactSection) {
+                            contactSection.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition-all"
+                      >
+                        <MessageSquare className="w-5 h-5" />
+                        Send to Contact Form
                       </button>
 
                       <button
