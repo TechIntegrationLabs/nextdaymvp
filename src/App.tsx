@@ -6,8 +6,6 @@ import { BlogPost } from './pages/BlogPost';
 import { AITools } from './pages/AITools';
 import { Navbar } from './components/Navbar';
 import { ProtectedPDF } from './pages/ProtectedPDF';
-import { TestAnimation } from './pages/TestAnimation';
-import { SplineAnimation } from './pages/SplineAnimation';
 import { MessageProvider } from './lib/MessageContext';
 import { ScrollIntro } from './components/ScrollIntro';
 
@@ -60,8 +58,6 @@ function App() {
           <Route path="/blog/:id" element={<BlogPost />} />
           <Route path="/ai-tools" element={<AITools />} />
           <Route path="/pdf" element={<ProtectedPDF />} />
-          <Route path="/test" element={<TestAnimation />} />
-          <Route path="/spline" element={<SplineAnimation />} />
         </Routes>
 
         {/* Dev controls - only shown in development */}

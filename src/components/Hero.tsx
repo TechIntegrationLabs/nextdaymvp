@@ -5,6 +5,7 @@ import { IdeaCapture } from './IdeaCapture';
 import { useMessage } from '../lib/MessageContext';
 import { cn } from '../lib/utils';
 import { Boxes } from './ui/background-boxes';
+import { SplineAnimation } from './SplineAnimation';
 
 export function Hero() {
   const [isIdeaCaptureOpen, setIsIdeaCaptureOpen] = useState(false);
@@ -80,6 +81,7 @@ export function Hero() {
 
   return (
     <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gray-900">
+      <SplineAnimation className="opacity-70" />
       <Boxes className="opacity-40" />
       <AnimatedLines />
       <div className="absolute inset-0 bg-gradient-to-b from-gray-900/90 via-gray-900/80 to-gray-900/95 backdrop-blur-sm" />
