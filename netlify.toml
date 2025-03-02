@@ -10,3 +10,15 @@
       { name = "email", label = "Email", widget = "email", required = true },
       { name = "message", label = "Message", widget = "text", required = true }
     ]
+
+# Handle SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Special case for /test path to allow both React route and static HTML
+[[redirects]]
+  from = "/test"
+  to = "/test.html"
+  status = 200
