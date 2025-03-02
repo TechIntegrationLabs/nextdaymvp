@@ -34,6 +34,25 @@ html {
   scrollbar-width: none;
 }
 
+/* Custom animation for Hero scroll indicator */
+@keyframes pulse-down {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(10px);
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-down {
+  animation-name: pulse-down;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
 /* 3D Text Effects */
 .hero-title {
   text-shadow: 

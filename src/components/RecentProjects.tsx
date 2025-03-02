@@ -144,7 +144,7 @@ export default function RecentProjects() {
   return (
     <section 
       ref={ref} 
-      className="py-24 bg-black/5"
+      className="py-24 pb-32 bg-black/5"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >

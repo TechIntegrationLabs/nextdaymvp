@@ -1,9 +1,8 @@
+import { useState, FormEvent, useEffect } from 'react';
 import { Mail, MessageSquare, Phone } from 'lucide-react';
 import { useInView } from '../hooks/useInView';
-import { useState, FormEvent, useEffect } from 'react';
 import { cn } from '../lib/utils';
 import { useMessage } from '../lib/MessageContext';
-import { submitContactForm } from '../lib/sheets';
 
 export function Contact() {
   const [ref, isVisible] = useInView({ threshold: 0.1 });
@@ -39,14 +38,14 @@ export function Contact() {
         throw new Error('Please fill in all required fields');
       }
 
-      const success = await submitContactForm({
-        name,
-        email,
-        message: messageText,
-        timestamp: new Date().toISOString()
+      // Submit the form data using fetch
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(formData as any).toString()
       });
-
-      if (!success) {
+      
+      if (!response.ok) {
         throw new Error('Failed to submit form. Please try again.');
       }
 
@@ -107,12 +106,24 @@ export function Contact() {
           </div>
 
           <form
+            name="contact"
+            method="POST"
+            data-netlify="true"
+            netlify-honeypot="bot-field"
             onSubmit={handleSubmit}
             className={cn(
               "space-y-6 transition-all duration-500 ease-out",
               isVisible ? 'translate-x-0 opacity-100' : 'translate-x-20 opacity-0'
             )}
           >
+            {/* Netlify Forms hidden field */}
+            <input type="hidden" name="form-name" value="contact" />
+            <p className="hidden">
+              <label>
+                Don't fill this out if you're human: <input name="bot-field" />
+              </label>
+            </p>
+
             <div>
               <label
                 htmlFor="name"
