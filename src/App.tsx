@@ -6,9 +6,9 @@ import { BlogPost } from './pages/BlogPost';
 import { AITools } from './pages/AITools';
 import { Navbar } from './components/Navbar';
 import { ProtectedPDF } from './pages/ProtectedPDF';
+import { TestAnimation } from './pages/TestAnimation';
 import { MessageProvider } from './lib/MessageContext';
 import { ScrollIntro } from './components/ScrollIntro';
-import Test from './pages/Test';
 
 function App() {
   const [showIntro, setShowIntro] = useState(true);
@@ -59,7 +59,7 @@ function App() {
           <Route path="/blog/:id" element={<BlogPost />} />
           <Route path="/ai-tools" element={<AITools />} />
           <Route path="/pdf" element={<ProtectedPDF />} />
-          <Route path="/test" element={<Test />} />
+          <Route path="/test" element={<TestAnimation />} />
         </Routes>
 
         {/* Dev controls - only shown in development */}

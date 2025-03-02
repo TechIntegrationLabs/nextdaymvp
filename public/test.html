@@ -1,60 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3D Scene Test | Next Day MVP</title>
-  <script type="module" src="https://unpkg.com/@splinetool/viewer@0.9.490/build/spline-viewer.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Animation Test - Next Day MVP</title>
   <style>
     body, html {
       margin: 0;
       padding: 0;
-      width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: #000;
     }
-    .loader {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      z-index: 10;
-    }
-    .loader.hidden {
-      display: none;
-    }
-    .spinner {
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top: 4px solid #3498db;
-      width: 40px;
-      height: 40px;
-      margin: 0 auto 20px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
     }
   </style>
 </head>
 <body>
-  <div id="loader" class="loader">
-    <div class="spinner"></div>
-    <p>Loading 3D scene...</p>
-  </div>
-  
-  <spline-viewer url="https://draft.spline.design/FXjEk3zey5aCMTxr/scene.splinecode"></spline-viewer>
-  
-  <script>
-    // Hide loader when the 3D scene is loaded
-    document.querySelector('spline-viewer').addEventListener('load', function() {
-      document.getElementById('loader').classList.add('hidden');
-    });
-  </script>
+  <iframe src="/noise_displace_copy/index.html" title="3D Animation"></iframe>
 </body>
 </html>
