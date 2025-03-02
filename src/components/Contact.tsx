@@ -41,7 +41,7 @@ export function Contact() {
       // Submit the form data using fetch
       const response = await fetch('/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams(formData as any).toString()
       });
       
@@ -109,7 +109,7 @@ export function Contact() {
             name="contact"
             method="POST"
             data-netlify="true"
-            netlify-honeypot="bot-field"
+            data-netlify-honeypot="bot-field"
             onSubmit={handleSubmit}
             className={cn(
               "space-y-6 transition-all duration-500 ease-out",
@@ -118,7 +118,7 @@ export function Contact() {
           >
             {/* Netlify Forms hidden field */}
             <input type="hidden" name="form-name" value="contact" />
-            <p className="hidden">
+            <p style={{ display: 'none' }}>
               <label>
                 Don't fill this out if you're human: <input name="bot-field" />
               </label>
