@@ -6,8 +6,8 @@ interface UseInViewOptions {
   triggerOnce?: boolean;
 }
 
-export function useInView(options: UseInViewOptions = { triggerOnce: true }): [React.RefObject<any>, boolean] {
-  const ref = useRef(null);
+export function useInView<T extends HTMLElement = HTMLDivElement>(options: UseInViewOptions = { triggerOnce: true }): [React.RefObject<T>, boolean] {
+  const ref = useRef<T>(null);
   const [isInView, setIsInView] = useState(false);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function useInView(options: UseInViewOptions = { triggerOnce: true }): [R
         observer.unobserve(currentRef);
       }
     };
-  }, [options.threshold, options.rootMargin]);
+  }, [options.threshold, options.rootMargin, options.triggerOnce]);
 
   return [ref, isInView];
 }
