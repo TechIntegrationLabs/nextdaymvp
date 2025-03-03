@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import useSWR from 'swr';
-import { fetchProjects } from '../lib/sheets';
+import { fetchProjects, testGoogleSheetsAccess, fallbackProjects } from '../lib/sheets';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Code, Filter, Layers, Star } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getRandomFallbackImage } from '../lib/fallbackImages';
@@ -101,19 +101,35 @@ const enhanceProjects = (projects: Project[]): EnhancedProject[] => {
 };
 
 export default function RecentProjects() {
-  const { data: rawProjects, error } = useSWR<Project[]>('projects', fetchProjects);
+  const { data: rawProjects, error, isLoading } = useSWR<Project[]>('projects', fetchProjects);
   const [projects, setProjects] = useState<EnhancedProject[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeProject, setActiveProject] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const projectsPerPage = 2; // Show fewer projects per page to make them larger
   
+  console.log('SWR Data State:', { 
+    rawProjects, 
+    error: error ? (error instanceof Error ? error.message : 'Unknown error') : null, 
+    isLoading 
+  });
+
   // Refs for scroll animation
   const sectionRef = useRef<HTMLElement>(null);
   const [hasAnimated, setHasAnimated] = useState(false);
   
   // Process the raw projects when they load
   useEffect(() => {
+    // Test Google Sheets API access when component loads
+    testGoogleSheetsAccess().then(success => {
+      console.log('Google Sheets API test result:', success);
+      if (!success && (!rawProjects || rawProjects.length === 0)) {
+        console.log('Using fallback projects due to API access issues');
+        const enhanced = enhanceProjects(fallbackProjects);
+        setProjects(enhanced);
+      }
+    });
+
     if (rawProjects) {
       console.log('Raw projects from Google Sheets:', rawProjects);
       const enhanced = enhanceProjects(rawProjects);

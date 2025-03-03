@@ -30,7 +30,8 @@ export interface ContactFormData {
   timestamp: string;
 }
 
-const fallbackProjects: Project[] = [
+// Set up fallback projects for when the Google Sheet isn't available
+export const fallbackProjects: Project[] = [
   {
     id: '1',
     title: 'AI-Powered Analytics Platform',
@@ -103,9 +104,19 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: string[]) => T, fa
     }
 
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheet}!A2:Z?key=${API_KEY}`;
-    console.log(`Fetching ${sheet} data from Google Sheets...`);
+    console.log(`Fetching ${sheet} data from Google Sheets...`, {
+      sheetId: SHEET_ID,
+      hasApiKey: !!API_KEY,
+      url: url.replace(API_KEY, '***')
+    });
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      mode: 'cors',
+    });
 
     if (!response.ok) {
       const errorData = await response.text();
@@ -140,6 +151,14 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: string[]) => T, fa
 export async function fetchProjects(): Promise<Project[]> {
   try {
     console.log('Fetching projects from Google Sheets...');
+    
+    // Check if Google Sheets API is accessible first
+    const isApiAccessible = await testGoogleSheetsAccess().catch(() => false);
+    if (!isApiAccessible) {
+      console.warn('Google Sheets API is not accessible, using fallback data');
+      return fallbackProjects;
+    }
+    
     const projects = await fetchFromSheet<Project>(
       'Projects',
       (row) => {
@@ -204,6 +223,43 @@ export async function fetchAITools(): Promise<AITool[]> {
     }),
     fallbackTools
   );
+}
+
+export async function testGoogleSheetsAccess(): Promise<boolean> {
+  try {
+    if (!SHEET_ID || !API_KEY) {
+      console.error('Missing Google Sheets credentials');
+      return false;
+    }
+
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Projects!A2:Z?key=${API_KEY}`;
+    console.log('Testing Google Sheets access:', url.replace(API_KEY, '***'));
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      mode: 'cors',
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Google Sheets API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
+      return false;
+    }
+
+    const data = await response.json();
+    console.log('Google Sheets API response:', data);
+    return true;
+  } catch (error) {
+    console.error('Error testing Google Sheets access:', error);
+    return false;
+  }
 }
 
 export async function submitContactForm(data: ContactFormData): Promise<boolean> {
