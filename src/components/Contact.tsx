@@ -1,16 +1,15 @@
+import { useState, FormEvent, useEffect } from 'react';
 import { Mail, MessageSquare, Phone } from 'lucide-react';
 import { useInView } from '../hooks/useInView';
-import { useState, FormEvent, useEffect } from 'react';
 import { cn } from '../lib/utils';
 import { useMessage } from '../lib/MessageContext';
-import { submitContactForm } from '../lib/sheets';
 
 export function Contact() {
   const [ref, isVisible] = useInView({ threshold: 0.1 });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const { message } = useMessage();
+  const { message, appSiteDetails, originalTranscript, generatedImageUrl } = useMessage();
 
   useEffect(() => {
     const messageTextarea = document.getElementById('message') as HTMLTextAreaElement;
@@ -19,6 +18,14 @@ export function Contact() {
       messageTextarea.focus();
     }
   }, [message]);
+
+  useEffect(() => {
+    const appDetailsTextarea = document.getElementById('appDetails') as HTMLTextAreaElement;
+    if (appDetailsTextarea && appSiteDetails) {
+      appDetailsTextarea.value = appSiteDetails;
+      appDetailsTextarea.focus();
+    }
+  }, [appSiteDetails]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,20 +40,34 @@ export function Contact() {
       // Validate form data
       const name = formData.get('name') as string;
       const email = formData.get('email') as string;
+      const phone = formData.get('phone') as string;
+      const appDetails = formData.get('appDetails') as string;
       const messageText = formData.get('message') as string;
 
       if (!name || !email || !messageText) {
         throw new Error('Please fill in all required fields');
       }
 
-      const success = await submitContactForm({
+      // Create data object to send to webhook
+      const dataToSend = {
         name,
         email,
+        phone,
+        appDetails,
         message: messageText,
+        originalTranscript,
+        generatedImageUrl,
         timestamp: new Date().toISOString()
-      });
+      };
 
-      if (!success) {
+      // Submit the form data to the webhook URL
+      const response = await fetch('https://hook.us2.make.com/qb6cr2gvxqytl3xvbycredmvbypmpdl2', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToSend)
+      });
+      
+      if (!response.ok) {
         throw new Error('Failed to submit form. Please try again.');
       }
 
@@ -149,6 +170,39 @@ export function Contact() {
 
             <div>
               <label
+                htmlFor="phone"
+                className="block text-sm font-medium text-slate-200 mb-2"
+              >
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                id="phone"
+                className="w-full px-4 py-2 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-custom-blue focus:border-transparent transition-colors"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="appDetails"
+                className="block text-sm font-medium text-slate-200 mb-2"
+              >
+                App/Site Details
+              </label>
+              <textarea
+                id="appDetails"
+                name="appDetails"
+                rows={4}
+                className="w-full px-4 py-2 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-custom-blue focus:border-transparent transition-colors"
+                disabled={isSubmitting}
+                placeholder="Share details about your app or website idea here..."
+              />
+            </div>
+
+            <div>
+              <label
                 htmlFor="message"
                 className="block text-sm font-medium text-slate-200 mb-2"
               >
@@ -161,6 +215,7 @@ export function Contact() {
                 required
                 className="w-full px-4 py-2 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-custom-blue focus:border-transparent transition-colors"
                 disabled={isSubmitting}
+                placeholder="Tell us about your project goals, timeline, or any questions you have..."
               />
             </div>
 

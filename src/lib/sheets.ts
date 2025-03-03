@@ -35,37 +35,29 @@ const fallbackProjects: Project[] = [
     id: '1',
     title: 'AI-Powered Analytics Platform',
     description: 'Built a real-time analytics platform using machine learning to predict user behavior.',
-    technologies: ['React', 'Python', 'TensorFlow', 'AWS'],
+    technologies: 'React, Python, TensorFlow, AWS',
     client: 'TechCorp Inc.',
     type: 'AI/ML',
     image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
-    link: 'https://example.com/project1'
+    link: 'https://example.com',
   },
   {
     id: '2',
-    title: 'E-commerce Mobile App',
-    description: 'Developed a cross-platform mobile app with AR product visualization.',
-    technologies: ['React Native', 'Node.js', 'AR Kit', 'Firebase'],
-    client: 'Fashion Forward',
-    type: 'Mobile',
-    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800'
+    title: 'E-Commerce Website Redesign',
+    description: 'Completely redesigned the UX/UI of an online retail platform, increasing conversion rates by 40%.',
+    technologies: 'React, TypeScript, Node.js, MongoDB',
+    client: 'RetailGiant',
+    type: 'Web Development',
+    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800',
+    link: 'https://example.com',
   },
-  {
-    id: '3',
-    title: 'Healthcare Management System',
-    description: 'Created a HIPAA-compliant patient management system with real-time monitoring.',
-    technologies: ['Next.js', 'PostgreSQL', 'WebSocket', 'Azure'],
-    type: 'Web App',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800',
-    link: 'https://example.com/project3'
-  }
 ];
 
 export interface Project {
   id: string;
   title: string;
   description: string;
-  technologies: string[];
+  technologies: string;
   client?: string;
   type: string;
   image: string;
@@ -103,7 +95,7 @@ const fallbackTools: AITool[] = [
   },
 ];
 
-async function fetchFromSheet<T>(sheet: string, mapper: (row: any[]) => T, fallback: T[]): Promise<T[]> {
+async function fetchFromSheet<T>(sheet: string, mapper: (row: string[]) => T, fallback: T[]): Promise<T[]> {
   try {
     if (!SHEET_ID || !API_KEY) {
       console.warn('Missing Google Sheets credentials:', { SHEET_ID: !!SHEET_ID, API_KEY: !!API_KEY });
@@ -146,27 +138,38 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: any[]) => T, fallb
 }
 
 export async function fetchProjects(): Promise<Project[]> {
-  return fetchFromSheet<Project>(
-    'Projects',
-    (row) => {
-      const rawLink = row[7] || undefined;
-      let formattedLink = rawLink;
-      if (rawLink && !rawLink.startsWith('http://') && !rawLink.startsWith('https://')) {
-        formattedLink = `https://${rawLink}`;
-      }
-      return {
-        id: row[0] || '',
-        title: row[1] || '',
-        description: row[2] || '',
-        technologies: (row[3] || '').split(',').map((tech: string) => tech.trim()),
-        client: row[4] || undefined,
-        type: row[5] || '',
-        image: row[6] || '',
-        link: formattedLink,
-      };
-    },
-    fallbackProjects
-  );
+  try {
+    console.log('Fetching projects from Google Sheets...');
+    const projects = await fetchFromSheet<Project>(
+      'Projects',
+      (row) => {
+        console.log('Processing row:', row);
+        const rawLink = row[7] || undefined;
+        let formattedLink = rawLink;
+        if (rawLink && !rawLink.startsWith('http://') && !rawLink.startsWith('https://')) {
+          formattedLink = `https://${rawLink}`;
+        }
+        const project = {
+          id: row[0] || '',
+          title: row[1] || '',
+          description: row[2] || '',
+          technologies: row[3] || '',
+          client: row[4] || undefined,
+          type: row[5] || '',
+          image: row[6] || '',
+          link: formattedLink,
+        };
+        console.log('Processed project:', project);
+        return project;
+      },
+      fallbackProjects
+    );
+    console.log('Projects fetched:', projects);
+    return projects;
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    return fallbackProjects;
+  }
 }
 
 export async function fetchBlogPosts(): Promise<BlogPost[]> {

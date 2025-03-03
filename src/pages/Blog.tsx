@@ -2,7 +2,7 @@ import { useInView } from '../hooks/useInView';
 import { Calendar, Clock, Tag, User, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useSWR from 'swr';
-import { fetchBlogPosts, type BlogPost } from '../lib/sheets';
+import { fetchBlogPosts } from '../lib/sheets';
 
 export function Blog() {
   const [ref, isVisible] = useInView({ threshold: 0.1 });
