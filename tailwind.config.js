@@ -14,6 +14,8 @@ export default {
       animation: {
         'progress-indeterminate': 'progress-indeterminate 1.5s ease-in-out infinite',
         'pulse-down': 'pulse-down 2s infinite ease-in-out',
+        'float': 'float 6s infinite ease-in-out',
+        'shine': 'shine 1.5s ease-in-out',
       },
       keyframes: {
         'progress-indeterminate': {
@@ -23,6 +25,16 @@ export default {
         'pulse-down': {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(10px)' }
+        },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0) translateX(0)' },
+          '25%': { transform: 'translateY(-10px) translateX(7px)' },
+          '50%': { transform: 'translateY(5px) translateX(-5px)' },
+          '75%': { transform: 'translateY(-5px) translateX(10px)' },
+        },
+        'shine': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' }
         }
       },
       typography: {
