@@ -110,7 +110,7 @@ export function Hero() {
               
               {/* Main heading with highlight effect */}
               <div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
                   <motion.span
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -133,7 +133,7 @@ export function Hero() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.7 }}
-                  className="mt-6 text-xl text-gray-300 max-w-lg"
+                  className="mt-6 text-lg sm:text-xl text-gray-300 max-w-lg"
                 >
                   Our AI-powered development process delivers high-quality apps in half the time and cost of traditional development.
                 </motion.p>
@@ -146,7 +146,7 @@ export function Hero() {
                 transition={{ duration: 0.8, delay: 0.9 }}
                 className="pt-4 space-y-4"
               >
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex items-start space-x-2">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-custom-blue/10 flex items-center justify-center">
                       <Rocket className="w-4 h-4 text-custom-blue" />
@@ -198,7 +198,7 @@ export function Hero() {
               >
                 <button 
                   onClick={() => setIsIdeaCaptureOpen(true)}
-                  className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-gradient-to-r from-custom-blue to-blue-600 rounded-full overflow-hidden transition-all hover:scale-105 hover:shadow-xl hover:shadow-custom-blue/30"
+                  className="group relative inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium text-white bg-gradient-to-r from-custom-blue to-blue-600 rounded-full overflow-hidden transition-all hover:scale-105 hover:shadow-xl hover:shadow-custom-blue/30 w-full sm:w-auto"
                 >
                   <span className="relative z-10 flex items-center">
                     <Mic className="w-5 h-5 mr-2" />
@@ -239,7 +239,7 @@ export function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 1.5 }}
-          className="absolute bottom-16 left-1/2 transform -translate-x-1/2"
+          className="absolute bottom-8 sm:bottom-16 left-1/2 transform -translate-x-1/2"
         >
           <div className="flex flex-col items-center text-slate-400">
             <span className="text-sm mb-2">Scroll to explore</span>

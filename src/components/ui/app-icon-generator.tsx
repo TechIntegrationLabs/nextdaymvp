@@ -99,10 +99,10 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
       setIsLoading(false);
       isGeneratingRef.current = false;
     }
-  }, [ideaTitle, setGeneratedImageUrl, retryCount]);
+  }, [ideaTitle, setGeneratedImageUrl, retryCount, generateFallbackImage]);
   
   // Fallback method to generate a simple image if the API call fails
-  const generateFallbackImage = () => {
+  const generateFallbackImage = useCallback(() => {
     // Use a placeholder image service with the app name encoded
     const encodedTitle = encodeURIComponent(ideaTitle || 'App');
     const placeholderUrl = `https://via.placeholder.com/1024x1024.png?text=${encodedTitle}`;
@@ -113,7 +113,7 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
     }
     
     setError('Using placeholder image due to API limitations. You can try again later.');
-  };
+  }, [ideaTitle, setGeneratedImageUrl]);
 
   // Cleanup any pending timers when component unmounts
   useEffect(() => {
@@ -150,9 +150,9 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="w-full bg-gray-800 rounded-lg flex items-center justify-center" style={{ height: '30rem' }}>
+        <div className="w-full bg-gray-800 rounded-lg flex items-center justify-center" style={{ height: 'min(30rem, 50vh)' }}>
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-custom-blue mb-4"></div>
+            <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-custom-blue mb-4"></div>
             <p className="text-slate-200">Generating your app icon...</p>
           </div>
         </div>
@@ -163,25 +163,27 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
   if (error && !iconUrl) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="w-full bg-gray-800 rounded-lg flex items-center justify-center p-4" style={{ height: '30rem' }}>
+        <div className="w-full bg-gray-800 rounded-lg flex items-center justify-center p-4" style={{ height: 'min(30rem, 50vh)' }}>
           <div className="text-center">
-            <p className="text-red-400 mb-4">{error}</p>
-            <button
-              onClick={() => {
-                setRetryCount(0);
-                isGeneratingRef.current = false;
-                generateAppImage();
-              }}
-              className="px-4 py-2 bg-custom-blue text-white rounded hover:bg-blue-600 transition-colors"
-            >
-              Try Again
-            </button>
-            <button
-              onClick={generateFallbackImage}
-              className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors ml-2"
-            >
-              Use Placeholder
-            </button>
+            <p className="text-red-400 mb-4 text-sm sm:text-base">{error}</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button
+                onClick={() => {
+                  setRetryCount(0);
+                  isGeneratingRef.current = false;
+                  generateAppImage();
+                }}
+                className="px-3 py-2 text-sm bg-custom-blue text-white rounded hover:bg-blue-600 transition-colors"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={generateFallbackImage}
+                className="px-3 py-2 text-sm bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
+              >
+                Use Placeholder
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -195,11 +197,11 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
           src={iconUrl}
           alt="Generated app icon"
           className="w-full h-auto object-contain rounded-lg shadow-lg"
-          style={{ maxHeight: '30rem' }}
+          style={{ maxHeight: 'min(30rem, 50vh)' }}
         />
         {error && (
           <div className="absolute bottom-0 left-0 right-0 bg-gray-900 bg-opacity-80 p-2 text-center">
-            <p className="text-yellow-400 text-sm">{error}</p>
+            <p className="text-yellow-400 text-xs sm:text-sm">{error}</p>
           </div>
         )}
       </div>
@@ -208,9 +210,9 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
 
   return (
     <div className="flex items-center justify-center h-full">
-      <div className="w-full bg-gray-800 rounded-lg flex items-center justify-center" style={{ height: '30rem' }}>
+      <div className="w-full bg-gray-800 rounded-lg flex items-center justify-center" style={{ height: 'min(30rem, 50vh)' }}>
         <div className="text-center">
-          <p className="text-slate-200">Ready to generate app icon...</p>
+          <p className="text-slate-200 text-sm sm:text-base">Ready to generate app icon...</p>
         </div>
       </div>
     </div>

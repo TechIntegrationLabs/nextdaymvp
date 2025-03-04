@@ -1,12 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 
-export function TypingAnimation() {
+interface TypingAnimationProps {
+  messages?: string[];
+  typingSpeed?: number;
+  erasingSpeed?: number;
+  delayBetweenMessages?: number;
+}
+
+export function TypingAnimation({
+  messages: customMessages,
+  typingSpeed = 10,
+  erasingSpeed = 5,
+  delayBetweenMessages = 100
+}: TypingAnimationProps) {
   const [displayText, setDisplayText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
   const [messageIndex, setMessageIndex] = useState(0);
   
-  // More exaggerated, silly, and hyped-up messages with tech jargon
-  const messages = [
+  // Default messages if none provided
+  const defaultMessages = [
     "Firing up the AI quantum processing unit...",
     "Activating neural hyperdrive boosters...",
     "Warming up the idea-to-code transponder matrix...",
@@ -18,12 +30,12 @@ export function TypingAnimation() {
     "Spinning up the cloud-native dream compiler...",
     "Initializing the quantum idea synthesizer...",
   ];
-
-  // Super fast typing speed and message cycling
-  const typingSpeed = 10; // much faster typing
-  const erasingSpeed = 5; // much faster erasing
-  const pauseBeforeErasing = 800; // much shorter pause before erasing
-  const pauseBeforeNextMessage = 100; // almost no pause before next message
+  
+  const messages = customMessages || defaultMessages;
+  
+  // Pause durations
+  const pauseBeforeErasing = 800; // pause before erasing
+  const pauseBeforeNextMessage = delayBetweenMessages;
   
   const currentMessageRef = useRef(messages[0]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -68,7 +80,7 @@ export function TypingAnimation() {
         clearTimeout(timerRef.current);
       }
     };
-  }, [displayText, isTyping, messageIndex, messages]);
+  }, [displayText, isTyping, messageIndex, messages, typingSpeed, erasingSpeed, pauseBeforeNextMessage]);
 
   return (
     <div className="h-6 flex items-center">

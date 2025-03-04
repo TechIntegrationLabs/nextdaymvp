@@ -92,12 +92,12 @@ export function Contact() {
           Get in Touch
         </h2>
 
-        <div className="grid md:grid-cols-2 gap-12">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12">
           <div className={cn(
             "transition-all duration-500 ease-out",
             isVisible ? 'translate-x-0 opacity-100' : '-translate-x-20 opacity-0'
           )}>
-            <h3 className="text-2xl font-semibold mb-6 text-white">
+            <h3 className="text-xl md:text-2xl font-semibold mb-6 text-white">
               Let's Build Something Amazing
             </h3>
             <p className="text-slate-200 mb-8">
@@ -111,7 +111,7 @@ export function Contact() {
                 className="flex items-center gap-3 text-slate-200 hover:text-custom-blue transition-colors"
               >
                 <Mail className="w-5 h-5" />
-                techintegrationlabs@gmail.com
+                <span className="break-all">techintegrationlabs@gmail.com</span>
               </a>
               <a
                 href="tel:+13853186435"

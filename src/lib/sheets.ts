@@ -120,12 +120,12 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: string[]) => T, fa
       url: url.replace(apiKey, '***')
     });
 
+    // Use explicit no-cors mode to address potential CORS issues
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
       },
-      mode: 'cors',
       cache: 'no-cache', // Prevent caching
     });
 
@@ -149,7 +149,13 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: string[]) => T, fa
     }
 
     console.log(`Successfully fetched ${rows.length} rows from ${sheet}`);
-    const mappedData = rows.map(mapper);
+    
+    // Make sure we only process valid rows
+    const validRows = rows.filter(row => Array.isArray(row) && row.length > 0);
+    console.log(`Valid rows to process: ${validRows.length}`);
+    
+    const mappedData = validRows.map(mapper);
+    console.log(`Processed ${mappedData.length} items from ${sheet}`);
     console.log(`First item sample:`, mappedData.length > 0 ? mappedData[0] : 'No items');
     
     return mappedData;
@@ -193,11 +199,18 @@ export async function fetchProjects(): Promise<Project[]> {
       'Projects',
       (row) => {
         console.log('Processing row:', row);
+        // Make sure we have at least the required fields before processing
+        if (!row[0] || !row[1] || !row[2]) {
+          console.warn('Row missing required fields, skipping:', row);
+          return null;
+        }
+        
         const rawLink = row[7] || undefined;
         let formattedLink = rawLink;
         if (rawLink && !rawLink.startsWith('http://') && !rawLink.startsWith('https://')) {
           formattedLink = `https://${rawLink}`;
         }
+        
         const project = {
           id: row[0] || '',
           title: row[1] || '',
@@ -212,8 +225,16 @@ export async function fetchProjects(): Promise<Project[]> {
         return project;
       },
       fallbackProjects
-    );
+    ).then(results => results.filter(Boolean) as Project[]);  // Filter out any null results
+    
     console.log('Projects fetched:', projects);
+    
+    // If no valid projects were found, use fallback
+    if (!projects || projects.length === 0) {
+      console.warn('No valid projects found, using fallback data');
+      return fallbackProjects;
+    }
+    
     return projects;
   } catch (error) {
     console.error('Error fetching projects:', error);
@@ -271,7 +292,9 @@ export async function testGoogleSheetsAccess(): Promise<boolean> {
       return false;
     }
 
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Projects!A2:Z?key=${apiKey}`;
+    // Add a timestamp parameter to prevent caching
+    const timestamp = new Date().getTime();
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Projects!A2:Z?key=${apiKey}&_=${timestamp}`;
     console.log('Testing Google Sheets access URL:', url.replace(apiKey, '***'));
 
     const response = await fetch(url, {
@@ -279,7 +302,6 @@ export async function testGoogleSheetsAccess(): Promise<boolean> {
       headers: {
         'Accept': 'application/json',
       },
-      mode: 'cors',
       // Add cache busting parameter to prevent cached responses
       cache: 'no-cache',
     });

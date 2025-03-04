@@ -25,15 +25,6 @@ function App() {
     window.scrollTo(0, 0);
   };
 
-  // Function to reset intro (for development testing)
-  const resetIntro = () => {
-    localStorage.removeItem('hasSeenIntro');
-    setHasSeenIntro(false);
-    setShowIntro(true);
-    // Reload the page to reset scroll state
-    window.location.reload();
-  };
-
   // Skip intro if user has already seen it, or not on homepage
   useEffect(() => {
     const isHomepage = window.location.pathname === '/';
@@ -41,8 +32,6 @@ function App() {
       setShowIntro(false);
     }
   }, [hasSeenIntro]);
-
-  const isDev = process.env.NODE_ENV === 'development';
 
   return (
     <MessageProvider>
@@ -57,18 +46,6 @@ function App() {
           <Route path="/ai-tools" element={<AITools />} />
           <Route path="/pdf" element={<ProtectedPDF />} />
         </Routes>
-
-        {/* Dev controls - only shown in development */}
-        {isDev && !showIntro && (
-          <div className="fixed bottom-4 right-4 z-50">
-            <button
-              onClick={resetIntro}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Reset Intro
-            </button>
-          </div>
-        )}
       </div>
     </MessageProvider>
   );

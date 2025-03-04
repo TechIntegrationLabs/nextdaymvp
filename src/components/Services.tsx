@@ -1,5 +1,5 @@
 import { useInView } from '../hooks/useInView';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { 
@@ -11,8 +11,7 @@ import {
   Layers, 
   RefreshCw, 
   DollarSign,
-  ArrowUpCircle,
-  Plus
+  ArrowUpCircle
 } from 'lucide-react';
 
 interface ServiceInfo {
@@ -211,15 +210,8 @@ export function Services() {
               </p>
               
               {/* Interactive elements */}
-              <div className="mt-6 flex items-center justify-between">
-                <div className="h-0.5 w-8 bg-gradient-to-r from-transparent via-gray-600 to-transparent group-hover:via-white/30 transition-colors duration-300"></div>
-                <button 
-                  className="p-2 rounded-full bg-gray-700/50 group-hover:bg-gradient-to-br group-hover:from-blue-500/80 group-hover:to-purple-500/80 transition-all duration-300"
-                  aria-label="Learn more"
-                >
-                  <Plus className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors duration-300" />
-                </button>
-                <div className="h-0.5 w-8 bg-gradient-to-r from-transparent via-gray-600 to-transparent group-hover:via-white/30 transition-colors duration-300"></div>
+              <div className="mt-6 flex items-center justify-center">
+                <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-gray-600 to-transparent group-hover:via-white/30 transition-colors duration-300"></div>
               </div>
               
               {/* Bottom border animation */}
@@ -228,42 +220,7 @@ export function Services() {
           ))}
         </motion.div>
         
-        {/* CTA Section with enhanced animation */}
-        <div className="mt-24 text-center">
-          <div className={cn(
-            "bg-gradient-to-r from-gray-800/80 to-gray-900/80 border border-gray-700/50 rounded-2xl p-10 backdrop-blur-md max-w-4xl mx-auto relative overflow-hidden",
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12",
-            "transition-all duration-1000 delay-700"
-          )}>
-            {/* Background animated elements */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl"></div>
-            </div>
-            
-            <h3 className="text-3xl font-bold text-white mb-4 relative">
-              Ready to transform your business with AI?
-            </h3>
-            <p className="text-slate-400 mb-8 max-w-2xl mx-auto">
-              Our team of experts is ready to help you integrate these cutting-edge solutions into your business processes.
-            </p>
-            <a 
-              href="#contact" 
-              className="group relative inline-flex items-center py-4 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-blue-900/30 overflow-hidden"
-            >
-              {/* Button background animation */}
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-20 group-hover:animate-shine"></span>
-              
-              <span className="relative">Get Started Today</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="relative h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </a>
-            <p className="text-slate-500 text-sm mt-4">
-              Free consultation • No commitment • Get a quote in 24 hours
-            </p>
-          </div>
-        </div>
+        {/* CTA Section removed as requested */}
       </div>
     </section>
   );

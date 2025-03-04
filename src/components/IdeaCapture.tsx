@@ -90,8 +90,12 @@ export function IdeaCapture({
   const processIdea = async () => {
     setIsProcessing(true);
     setProgress(0);
+    
+    // Define progressInterval at a higher scope so it can be accessed in catch and finally blocks
+    let progressInterval: NodeJS.Timeout;
+    
     try {
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setProgress(prev => {
           const newProgress = prev + 1;
           return newProgress < 95 ? newProgress : prev;
@@ -235,10 +239,10 @@ Your output should be positive, insightful, and focused on possibilities. Make t
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-gray-900 p-6 text-left align-middle shadow-xl transition-all">
+              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-gray-900 p-4 sm:p-6 text-left align-middle shadow-xl transition-all">
                 <Dialog.Title
                   as="h3"
-                  className="text-2xl font-semibold leading-6 text-white text-center mb-4"
+                  className="text-xl sm:text-2xl font-semibold leading-6 text-white text-center mb-4"
                 >
                   Tell Us About Your Idea
                 </Dialog.Title>
@@ -278,11 +282,11 @@ Your output should be positive, insightful, and focused on possibilities. Make t
                       placeholder="Your transcribed text will appear here..."
                     />
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-2 sm:gap-4 mt-4">
                       <button
                         onClick={status === 'recording' ? handleStopRecording : handleStartRecording}
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all",
+                          "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-sm sm:text-base",
                           status === 'recording'
                             ? "bg-red-600 hover:bg-red-700 text-white"
                             : "bg-custom-blue hover:bg-custom-blue/90 text-white"
@@ -290,12 +294,12 @@ Your output should be positive, insightful, and focused on possibilities. Make t
                       >
                         {status === 'recording' ? (
                           <>
-                            <StopCircle className="w-5 h-5" />
+                            <StopCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                             Stop Recording
                           </>
                         ) : (
                           <>
-                            <Mic className="w-5 h-5" />
+                            <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
                             Start Recording
                           </>
                         )}
@@ -303,9 +307,9 @@ Your output should be positive, insightful, and focused on possibilities. Make t
 
                       <button
                         onClick={resetAll}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all text-sm sm:text-base"
                       >
-                        <RefreshCw className="w-5 h-5" />
+                        <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
                         Restart
                       </button>
 
@@ -313,7 +317,7 @@ Your output should be positive, insightful, and focused on possibilities. Make t
                         onClick={processIdea}
                         disabled={!transcription || isProcessing}
                         className={cn(
-                          "flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-all ml-auto",
+                          "flex items-center gap-2 px-4 sm:px-6 py-2 rounded-lg font-medium transition-all sm:ml-auto text-sm sm:text-base",
                           (!transcription || isProcessing)
                             ? "bg-gray-700 text-gray-400 cursor-not-allowed"
                             : "bg-green-600 hover:bg-green-700 text-white"
@@ -330,16 +334,16 @@ Your output should be positive, insightful, and focused on possibilities. Make t
                   </>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex gap-4 items-start">
-                      <div className="flex-1">
+                    <div className="flex flex-col lg:flex-row gap-4 items-start">
+                      <div className="w-full lg:flex-1">
                         {isEditing ? (
                           <textarea
                             value={processedIdea}
                             onChange={(e) => setProcessedIdea(e.target.value)}
-                            className="w-full h-96 px-4 py-2 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-custom-blue focus:border-transparent transition-colors"
+                            className="w-full h-64 sm:h-96 px-4 py-2 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-custom-blue focus:border-transparent transition-colors"
                           />
                         ) : (
-                          <div className="w-full h-[30rem] px-4 py-4 rounded-lg border border-gray-700 bg-gray-800 text-white overflow-y-auto">
+                          <div className="w-full h-64 sm:h-[30rem] px-4 py-4 rounded-lg border border-gray-700 bg-gray-800 text-white overflow-y-auto">
                             <div className="prose prose-invert prose-headings:text-custom-blue prose-strong:text-white prose-a:text-custom-blue prose-ul:mb-4 prose-li:mb-1 max-w-none">
                               <ReactMarkdown children={processedIdea} />
                             </div>
@@ -348,7 +352,7 @@ Your output should be positive, insightful, and focused on possibilities. Make t
                       </div>
                       
                       {!isEditing && (
-                        <div className="flex-1">
+                        <div className="w-full lg:flex-1">
                           <AppIconGenerator 
                             ideaTitle={ideaTitle} 
                             ideaDescription={processedIdea}
@@ -358,28 +362,28 @@ Your output should be positive, insightful, and focused on possibilities. Make t
                       )}
                     </div>
 
-                    <div className="flex gap-4 flex-wrap">
+                    <div className="flex flex-wrap gap-2 sm:gap-4">
                       <button
                         onClick={() => setIsEditing(!isEditing)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-custom-blue hover:bg-custom-blue/90 text-white font-medium transition-all"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-custom-blue hover:bg-custom-blue/90 text-white font-medium transition-all text-sm sm:text-base"
                       >
-                        <Edit2 className="w-5 h-5" />
+                        <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
                         {isEditing ? 'Save' : 'Edit'}
                       </button>
 
                       <button
                         onClick={handleCopy}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all text-sm sm:text-base"
                       >
-                        <Copy className="w-5 h-5" />
+                        <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
                         Copy
                       </button>
 
                       <button
                         onClick={handleDownload}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all text-sm sm:text-base"
                       >
-                        <Download className="w-5 h-5" />
+                        <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                         Download
                       </button>
 
@@ -393,17 +397,17 @@ Your output should be positive, insightful, and focused on possibilities. Make t
                             contactSection.scrollIntoView({ behavior: 'smooth' });
                           }
                         }}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition-all"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition-all text-sm sm:text-base"
                       >
-                        <MessageSquare className="w-5 h-5" />
+                        <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
                         Send to Contact Form
                       </button>
 
                       <button
                         onClick={resetAll}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all ml-auto"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all sm:ml-auto text-sm sm:text-base mt-2 sm:mt-0"
                       >
-                        <RefreshCw className="w-5 h-5" />
+                        <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
                         Start Over
                       </button>
                     </div>
