@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import useSWR from 'swr';
 import { fetchProjects, Project, fallbackProjects } from '../lib/sheets';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useInView } from '../hooks/useInView';
+import { cn } from '../lib/utils';
 
 export default function RecentProjects() {
   // Use SWR for data fetching with improved configuration
@@ -23,6 +25,7 @@ export default function RecentProjects() {
   const [currentPage, setCurrentPage] = useState(0);
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const [ref, isVisible] = useInView({ threshold: 0.1 });
   
   // Projects per page (2 per row, 2 rows = 4 per page)
   const projectsPerPage = 4;
@@ -104,7 +107,7 @@ export default function RecentProjects() {
   }, [currentPage, hoveredProject, totalPages]);
 
   return (
-    <section className="py-24 bg-gray-950 relative overflow-hidden">
+    <section ref={ref} className="py-24 bg-gray-950 relative overflow-hidden">
       {/* Background gradients */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/3 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl opacity-60"></div>
@@ -113,22 +116,25 @@ export default function RecentProjects() {
       
       <div className="container px-4 mx-auto relative z-10">
         <div className="flex flex-col items-center mb-16 text-center">
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-4 text-4xl font-bold text-white md:text-5xl"
-          >
+          <h2 className={cn(
+            "text-5xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300 mb-8 relative inline-block",
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
+            "transition-all duration-1000 ease-out"
+          )}>
             Recent Projects
-          </motion.h2>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="max-w-3xl text-lg text-gray-300"
-          >
+            <div className="absolute -bottom-4 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" style={{ 
+              transform: isVisible ? 'scaleX(1)' : 'scaleX(0)', 
+              transformOrigin: 'left',
+              transition: 'transform 1.5s cubic-bezier(0.19, 1, 0.22, 1) 0.5s'
+            }}></div>
+          </h2>
+          <p className={cn(
+            "text-xl text-slate-400 max-w-3xl mx-auto",
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
+            "transition-all duration-1000 delay-200 ease-out"
+          )}>
             Check out some of our recent work. We've helped businesses of all sizes bring their ideas to life.
-          </motion.p>
+          </p>
           
           {/* Show retry button if there was an error */}
           {error && (
