@@ -1,3 +1,4 @@
+// Constants for environment variables - referenced for clarity
 const SHEET_ID = import.meta.env.VITE_GOOGLE_SHEET_ID;
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
@@ -98,16 +99,25 @@ const fallbackTools: AITool[] = [
 
 async function fetchFromSheet<T>(sheet: string, mapper: (row: string[]) => T, fallback: T[]): Promise<T[]> {
   try {
-    if (!SHEET_ID || !API_KEY) {
-      console.warn('Missing Google Sheets credentials:', { SHEET_ID: !!SHEET_ID, API_KEY: !!API_KEY });
+    const sheetId = import.meta.env.VITE_GOOGLE_SHEET_ID;
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+    
+    if (!sheetId || !apiKey) {
+      console.warn('Missing Google Sheets credentials:', { 
+        hasSheetId: !!sheetId, 
+        hasApiKey: !!apiKey 
+      });
       return fallback;
     }
 
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheet}!A2:Z?key=${API_KEY}`;
+    // Add a timestamp to prevent caching issues
+    const timestamp = new Date().getTime();
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheet}!A2:Z?key=${apiKey}&_=${timestamp}`;
+    
     console.log(`Fetching ${sheet} data from Google Sheets...`, {
-      sheetId: SHEET_ID,
-      hasApiKey: !!API_KEY,
-      url: url.replace(API_KEY, '***')
+      sheetId: sheetId ? `${sheetId.substring(0, 5)}...` : 'missing',
+      hasApiKey: !!apiKey,
+      url: url.replace(apiKey, '***')
     });
 
     const response = await fetch(url, {
@@ -116,6 +126,7 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: string[]) => T, fa
         'Accept': 'application/json',
       },
       mode: 'cors',
+      cache: 'no-cache', // Prevent caching
     });
 
     if (!response.ok) {
@@ -124,7 +135,7 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: string[]) => T, fa
         status: response.status,
         statusText: response.statusText,
         error: errorData,
-        url: url.replace(API_KEY, '***')
+        url: url.replace(apiKey, '***')
       });
       throw new Error(`Failed to fetch ${sheet}: ${response.statusText}`);
     }
@@ -138,19 +149,38 @@ async function fetchFromSheet<T>(sheet: string, mapper: (row: string[]) => T, fa
     }
 
     console.log(`Successfully fetched ${rows.length} rows from ${sheet}`);
-    return rows.map(mapper);
+    const mappedData = rows.map(mapper);
+    console.log(`First item sample:`, mappedData.length > 0 ? mappedData[0] : 'No items');
+    
+    return mappedData;
   } catch (error) {
     console.error(`Error fetching ${sheet}:`, {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
     });
-    throw error; // Re-throw the error for SWR to handle
+    return fallback; // Return fallback data instead of re-throwing
   }
 }
 
 export async function fetchProjects(): Promise<Project[]> {
   try {
     console.log('Fetching projects from Google Sheets...');
+    
+    // Get the configured environment variables
+    const sheetId = import.meta.env.VITE_GOOGLE_SHEET_ID;
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+    
+    console.log('Environment variables:', { 
+      hasSheetId: !!sheetId, 
+      hasApiKey: !!apiKey,
+      sheetIdLength: sheetId ? sheetId.length : 0
+    });
+    
+    // If no sheet ID or API key, use fallback
+    if (!sheetId || !apiKey) {
+      console.warn('Missing Google Sheets credentials, using fallback data');
+      return fallbackProjects;
+    }
     
     // Check if Google Sheets API is accessible first
     const isApiAccessible = await testGoogleSheetsAccess().catch(() => false);
@@ -187,6 +217,7 @@ export async function fetchProjects(): Promise<Project[]> {
     return projects;
   } catch (error) {
     console.error('Error fetching projects:', error);
+    // Always return fallback projects on error
     return fallbackProjects;
   }
 }
@@ -227,13 +258,21 @@ export async function fetchAITools(): Promise<AITool[]> {
 
 export async function testGoogleSheetsAccess(): Promise<boolean> {
   try {
-    if (!SHEET_ID || !API_KEY) {
+    const sheetId = import.meta.env.VITE_GOOGLE_SHEET_ID;
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+    
+    console.log('Testing Google Sheets access with credentials:', {
+      sheetId: sheetId ? `${sheetId.substring(0, 5)}...` : 'missing',
+      apiKey: apiKey ? 'provided' : 'missing'
+    });
+
+    if (!sheetId || !apiKey) {
       console.error('Missing Google Sheets credentials');
       return false;
     }
 
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Projects!A2:Z?key=${API_KEY}`;
-    console.log('Testing Google Sheets access:', url.replace(API_KEY, '***'));
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Projects!A2:Z?key=${apiKey}`;
+    console.log('Testing Google Sheets access URL:', url.replace(apiKey, '***'));
 
     const response = await fetch(url, {
       method: 'GET',
@@ -241,6 +280,8 @@ export async function testGoogleSheetsAccess(): Promise<boolean> {
         'Accept': 'application/json',
       },
       mode: 'cors',
+      // Add cache busting parameter to prevent cached responses
+      cache: 'no-cache',
     });
 
     if (!response.ok) {
@@ -254,10 +295,20 @@ export async function testGoogleSheetsAccess(): Promise<boolean> {
     }
 
     const data = await response.json();
-    console.log('Google Sheets API response:', data);
-    return true;
+    const hasValues = data && data.values && Array.isArray(data.values) && data.values.length > 0;
+    console.log('Google Sheets API response:', {
+      hasData: !!data,
+      hasValues,
+      rowCount: hasValues ? data.values.length : 0,
+      firstRowSample: hasValues ? data.values[0].slice(0, 3) : null
+    });
+    
+    return hasValues;
   } catch (error) {
-    console.error('Error testing Google Sheets access:', error);
+    console.error('Error testing Google Sheets access:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return false;
   }
 }

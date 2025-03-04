@@ -120,23 +120,45 @@ export default function RecentProjects() {
   
   // Process the raw projects when they load
   useEffect(() => {
-    // Test Google Sheets API access when component loads
-    testGoogleSheetsAccess().then(success => {
+    const initialize = async () => {
+      // Test Google Sheets API access when component loads
+      console.log('Testing Google Sheets API access...');
+      const success = await testGoogleSheetsAccess().catch(e => {
+        console.error('Error during API test:', e);
+        return false;
+      });
+      
       console.log('Google Sheets API test result:', success);
-      if (!success && (!rawProjects || rawProjects.length === 0)) {
-        console.log('Using fallback projects due to API access issues');
+      
+      // Handle API access issues
+      if (!success) {
+        console.log('API access test failed, using fallback projects');
+        const enhanced = enhanceProjects(fallbackProjects);
+        setProjects(enhanced);
+        return;
+      }
+      
+      // Handle successful API response but no projects
+      if (rawProjects && Array.isArray(rawProjects)) {
+        if (rawProjects.length === 0) {
+          console.log('API returned empty projects array, using fallback projects');
+          const enhanced = enhanceProjects(fallbackProjects);
+          setProjects(enhanced);
+        } else {
+          console.log('Raw projects from Google Sheets:', rawProjects);
+          const enhanced = enhanceProjects(rawProjects);
+          console.log('Enhanced projects:', enhanced);
+          setProjects(enhanced);
+        }
+      } else if (error || !rawProjects) {
+        console.log('SWR returned error or no data, using fallback projects');
         const enhanced = enhanceProjects(fallbackProjects);
         setProjects(enhanced);
       }
-    });
-
-    if (rawProjects) {
-      console.log('Raw projects from Google Sheets:', rawProjects);
-      const enhanced = enhanceProjects(rawProjects);
-      console.log('Enhanced projects:', enhanced);
-      setProjects(enhanced);
-    }
-  }, [rawProjects]);
+    };
+    
+    initialize();
+  }, [rawProjects, error]);
   
   // Toggle project details
   const toggleProjectDetails = (projectId: string) => {
