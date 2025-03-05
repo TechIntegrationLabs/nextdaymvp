@@ -9,7 +9,7 @@ A modern AI-powered app and website development agency website. This project sho
 - Interactive hero section with particle animations
 - Voice recording and transcription using OpenAI's Whisper API
 - AI-powered idea processing with GPT-4
-- App icon generation using DALL-E
+- App icon generation using Stability AI
 - Contact form with webhook integration
 - Responsive design with Tailwind CSS
 - Smooth animations with Framer Motion
@@ -49,7 +49,8 @@ This project uses environment variables to manage API keys and other sensitive i
    ```
 
 2. Open the `.env` file and replace the placeholder values with your actual API keys:
-   - `VITE_OPENAI_API_KEY`: Your OpenAI API key for voice transcription, idea processing, and image generation
+   - `VITE_OPENAI_API_KEY`: Your OpenAI API key for voice transcription and idea processing
+   - `VITE_STABILITY_API_KEY`: Your Stability AI API key for app icon generation
    - `VITE_GOOGLE_SHEET_ID`: Your Google Sheet ID for fetching recent projects
    - `VITE_GOOGLE_API_KEY`: Your Google API key for accessing Google Sheets API
 
@@ -61,7 +62,8 @@ This project uses environment variables to manage API keys and other sensitive i
 - Vite for fast development and building
 - Tailwind CSS for styling
 - Framer Motion for animations
-- OpenAI APIs (Whisper, GPT-4, DALL-E)
+- OpenAI APIs (Whisper, GPT-4)
+- Stability AI for image generation
 - React Router for navigation
 - React Hook Form for form handling
 

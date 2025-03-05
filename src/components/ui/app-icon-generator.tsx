@@ -28,7 +28,7 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
     setError('Using placeholder image due to API limitations. You can try again later.');
   }, [ideaTitle, setGeneratedImageUrl]);
 
-  // Generate an image using OpenAI's API based on the idea description
+  // Generate an image using Stability AI's API based on the idea description
   const generateAppImage = useCallback(async () => {
     // Prevent multiple simultaneous calls
     if (isGeneratingRef.current) return;
@@ -39,19 +39,29 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
     
     try {
       // Create a prompt for the image generation using the specific format requested
-      const prompt = `create an image for this app: '${ideaTitle}'`;
+      const prompt = `Create a modern, minimalist app icon for an application called: '${ideaTitle}'. The icon should be simple, memorable, and represent the core concept of the app. ${ideaDescription ? `The app is about: ${ideaDescription}` : ''}`;
       
-      // Call OpenAI's API to generate an image
-      const response = await fetch('https://api.openai.com/v1/images/generations', {
+      // Call Stability AI's API to generate an image
+      const response = await fetch('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_STABILITY_API_KEY}`
         },
         body: JSON.stringify({
-          prompt: prompt,
-          n: 1,
-          size: "1024x1024"
+          text_prompts: [
+            {
+              text: prompt,
+              weight: 1
+            }
+          ],
+          cfg_scale: 7,
+          height: 1024,
+          width: 1024,
+          samples: 1,
+          steps: 30,
+          style_preset: "digital-art"
         })
       });
       
@@ -66,12 +76,14 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
           throw new Error(`Rate limit exceeded. Try again in ${retrySeconds} seconds.`);
         }
         
-        throw new Error(errorData.error?.message || 'Failed to generate image');
+        throw new Error(errorData.message || 'Failed to generate image');
       }
       
       const data = await response.json();
-      if (data.data && data.data.length > 0) {
-        const imageUrl = data.data[0].url;
+      if (data.artifacts && data.artifacts.length > 0) {
+        // Stability AI returns base64 encoded images
+        const base64Image = data.artifacts[0].base64;
+        const imageUrl = `data:image/png;base64,${base64Image}`;
         setIconUrl(imageUrl);
         // Store the generated image URL in the context if the setter function is provided
         if (setGeneratedImageUrl) {
@@ -113,8 +125,8 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
       setIsLoading(false);
       isGeneratingRef.current = false;
     }
-  }, [ideaTitle, setGeneratedImageUrl, retryCount]);
-
+  }, [ideaTitle, ideaDescription, setGeneratedImageUrl, retryCount, generateFallbackImage]);
+  
   // Cleanup any pending timers when component unmounts
   useEffect(() => {
     return () => {
