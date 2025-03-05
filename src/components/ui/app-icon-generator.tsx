@@ -14,6 +14,20 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isGeneratingRef = useRef(false);
 
+  // Fallback method to generate a simple image if the API call fails
+  const generateFallbackImage = useCallback(() => {
+    // Use a placeholder image service with the app name encoded
+    const encodedTitle = encodeURIComponent(ideaTitle || 'App');
+    const placeholderUrl = `https://via.placeholder.com/1024x1024.png?text=${encodedTitle}`;
+    setIconUrl(placeholderUrl);
+    
+    if (setGeneratedImageUrl) {
+      setGeneratedImageUrl(placeholderUrl);
+    }
+    
+    setError('Using placeholder image due to API limitations. You can try again later.');
+  }, [ideaTitle, setGeneratedImageUrl]);
+
   // Generate an image using OpenAI's API based on the idea description
   const generateAppImage = useCallback(async () => {
     // Prevent multiple simultaneous calls
@@ -99,21 +113,7 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
       setIsLoading(false);
       isGeneratingRef.current = false;
     }
-  }, [ideaTitle, setGeneratedImageUrl, retryCount, generateFallbackImage]);
-  
-  // Fallback method to generate a simple image if the API call fails
-  const generateFallbackImage = useCallback(() => {
-    // Use a placeholder image service with the app name encoded
-    const encodedTitle = encodeURIComponent(ideaTitle || 'App');
-    const placeholderUrl = `https://via.placeholder.com/1024x1024.png?text=${encodedTitle}`;
-    setIconUrl(placeholderUrl);
-    
-    if (setGeneratedImageUrl) {
-      setGeneratedImageUrl(placeholderUrl);
-    }
-    
-    setError('Using placeholder image due to API limitations. You can try again later.');
-  }, [ideaTitle, setGeneratedImageUrl]);
+  }, [ideaTitle, setGeneratedImageUrl, retryCount]);
 
   // Cleanup any pending timers when component unmounts
   useEffect(() => {
