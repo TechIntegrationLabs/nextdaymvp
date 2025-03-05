@@ -28,6 +28,39 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
     setError('Using placeholder image due to API limitations. You can try again later.');
   }, [ideaTitle, setGeneratedImageUrl]);
 
+  // Extract a concise description from the markdown text
+  const extractConciseDescription = useCallback((markdownText: string): string => {
+    try {
+      // Try to extract the core concept section first (most relevant)
+      const coreConcept = markdownText.match(/## 💡 Core Concept[^\n]*\n([\s\S]*?)(?=##|$)/i);
+      if (coreConcept && coreConcept[1]) {
+        // Get first 100 characters without markdown symbols
+        return coreConcept[1].replace(/\*/g, '').replace(/#/g, '').trim().substring(0, 100);
+      }
+      
+      // If no core concept, extract first key features
+      const keyFeatures = markdownText.match(/## 🔑 Key Features[^\n]*\n([\s\S]*?)(?=##|$)/i);
+      if (keyFeatures && keyFeatures[1]) {
+        return keyFeatures[1].replace(/\*/g, '').replace(/#/g, '').trim().substring(0, 100);
+      }
+      
+      // If nothing specific found, just use the first 100 non-header characters
+      const cleanText = markdownText
+        .replace(/^#.*$/gm, '') // Remove headers
+        .replace(/\*\*.*?\*\*/g, '') // Remove bold
+        .replace(/\*.*?\*/g, '') // Remove italic
+        .replace(/\[.*?\]\(.*?\)/g, '') // Remove links
+        .replace(/`.*?`/g, '') // Remove code
+        .trim();
+      
+      const firstParagraph = cleanText.split('\n\n')[0];
+      return firstParagraph.substring(0, 100);
+    } catch (e) {
+      console.error('Error extracting description:', e);
+      return '';
+    }
+  }, []);
+
   // Generate an image using Stability AI's API based on the idea description
   const generateAppImage = useCallback(async () => {
     // Prevent multiple simultaneous calls
@@ -38,8 +71,30 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
     setError(null);
     
     try {
+      // Ensure we have a valid title
+      const safeTitle = ideaTitle?.trim() || 'App';
+      
+      // Extract a concise description if we have one
+      let conciseDescription = '';
+      if (ideaDescription && ideaDescription.trim()) {
+        conciseDescription = extractConciseDescription(ideaDescription);
+      }
+      
       // Create a prompt for the image generation using the specific format requested
-      const prompt = `Create a modern, minimalist app icon for an application called: '${ideaTitle}'. The icon should be simple, memorable, and represent the core concept of the app. ${ideaDescription ? `The app is about: ${ideaDescription}` : ''}`;
+      let prompt = `Create a modern, minimalist app icon for an application called: '${safeTitle}'.`;
+      prompt += ` The icon should be simple, memorable, and represent the core concept of the app.`;
+      
+      // Only add description if it exists and is not too long
+      if (conciseDescription) {
+        prompt += ` The app is about: ${conciseDescription}.`;
+      }
+      
+      // Ensure prompt isn't too long (Stability AI has a 2000 character limit)
+      if (prompt.length > 1900) {
+        prompt = prompt.substring(0, 1900);
+      }
+      
+      console.log('Generating image with prompt:', prompt);
       
       // Call Stability AI's API to generate an image
       const response = await fetch('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image', {
@@ -125,7 +180,7 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
       setIsLoading(false);
       isGeneratingRef.current = false;
     }
-  }, [ideaTitle, ideaDescription, setGeneratedImageUrl, retryCount, generateFallbackImage]);
+  }, [ideaTitle, ideaDescription, setGeneratedImageUrl, retryCount, generateFallbackImage, extractConciseDescription]);
   
   // Cleanup any pending timers when component unmounts
   useEffect(() => {
@@ -138,7 +193,7 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
   
   // Debounced effect to generate the image
   useEffect(() => {
-    if (ideaTitle && ideaDescription) {
+    if (ideaTitle) {
       // Clear any existing timer
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -202,31 +257,19 @@ export function AppIconGenerator({ ideaTitle, ideaDescription, setGeneratedImage
     );
   }
 
-  if (iconUrl) {
-    return (
-      <div className="relative h-full">
-        <img
-          src={iconUrl}
-          alt="Generated app icon"
-          className="w-full h-auto object-contain rounded-lg shadow-lg"
-          style={{ maxHeight: 'min(30rem, 50vh)' }}
-        />
-        {error && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gray-900 bg-opacity-80 p-2 text-center">
-            <p className="text-yellow-400 text-xs sm:text-sm">{error}</p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center justify-center h-full">
-      <div className="w-full bg-gray-800 rounded-lg flex items-center justify-center" style={{ height: 'min(30rem, 50vh)' }}>
-        <div className="text-center">
-          <p className="text-slate-200 text-sm sm:text-base">Ready to generate app icon...</p>
+    <div className="w-full bg-gray-800 rounded-lg overflow-hidden" style={{ height: 'min(30rem, 50vh)' }}>
+      {iconUrl ? (
+        <img 
+          src={iconUrl} 
+          alt={`${ideaTitle || 'App'} Icon`} 
+          className="w-full h-full object-contain p-4"
+        />
+      ) : (
+        <div className="flex items-center justify-center h-full">
+          <p className="text-slate-400">App icon will appear here</p>
         </div>
-      </div>
+      )}
     </div>
   );
 }
