@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { useReactMediaRecorder } from 'react-media-recorder';
@@ -33,14 +33,37 @@ export function IdeaCapture({
   const [isEditing, setIsEditing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [ideaTitle, setIdeaTitle] = useState('');
+  const [recordingError, setRecordingError] = useState<string | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
+  // Configure audio recording with multiple options for better mobile compatibility
   const {
     status,
     startRecording,
     stopRecording,
     mediaBlobUrl,
-    clearBlobUrl
-  } = useReactMediaRecorder({ audio: true });
+    clearBlobUrl,
+    error: mediaRecorderError
+  } = useReactMediaRecorder({ 
+    audio: true,
+    // Specify a range of potential audio formats and settings for better compatibility
+    mediaRecorderOptions: {
+      mimeType: 'audio/webm;codecs=opus'
+    },
+    onDataAvailable: (blob) => {
+      // Collect audio chunks as they become available
+      if (blob.size > 0) {
+        audioChunksRef.current.push(blob);
+      }
+    },
+    onStop: () => {
+      // Nothing to do here - we'll handle the complete recording via mediaBlobUrl
+    },
+    onError: (err) => {
+      console.error("Media recorder error:", err);
+      setRecordingError(`Recording error: ${err}`);
+    }
+  });
 
   const resetAll = () => {
     setTranscription('');
@@ -50,11 +73,30 @@ export function IdeaCapture({
     clearBlobUrl();
     setProgress(0);
     setIdeaTitle('');
+    setRecordingError(null);
+    audioChunksRef.current = [];
   };
 
   const handleStartRecording = () => {
     setTranscription('');
-    startRecording();
+    setRecordingError(null);
+    audioChunksRef.current = [];
+    
+    // Check if browser supports required APIs first
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+      setRecordingError("Your browser doesn't support audio recording. Please try a different browser like Chrome or Safari.");
+      return;
+    }
+    
+    // Request permissions and start recording
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(() => {
+        startRecording();
+      })
+      .catch(err => {
+        console.error("Permission error:", err);
+        setRecordingError("Microphone permission denied. Please enable microphone access in your browser settings.");
+      });
   };
 
   const handleStopRecording = () => {
@@ -63,8 +105,24 @@ export function IdeaCapture({
 
   const transcribeAudio = useCallback(async (audioBlob: Blob) => {
     try {
+      setRecordingError(null);
+      
       const formData = new FormData();
-      formData.append('file', audioBlob, 'recording.webm');
+      
+      // Determine the file extension based on the blob type
+      let fileExtension = 'webm';
+      if (audioBlob.type.includes('mp4') || audioBlob.type.includes('mp4a')) {
+        fileExtension = 'm4a';
+      } else if (audioBlob.type.includes('mpeg') || audioBlob.type.includes('mp3')) {
+        fileExtension = 'mp3';
+      } else if (audioBlob.type.includes('wav')) {
+        fileExtension = 'wav';
+      }
+      
+      console.log(`Transcribing audio of type: ${audioBlob.type}, size: ${audioBlob.size} bytes`);
+      
+      // Name the file with the correct extension
+      formData.append('file', audioBlob, `recording.${fileExtension}`);
       formData.append('model', 'whisper-1');
 
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -76,15 +134,43 @@ export function IdeaCapture({
       });
 
       if (!response.ok) {
-        throw new Error('Transcription failed');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Transcription API error:', errorData);
+        throw new Error(`Transcription failed: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
       setTranscription(data.text);
     } catch (error) {
       console.error('Error transcribing audio:', error);
-      setTranscription('Error transcribing audio. Please try again.');
+      setRecordingError(`Error transcribing audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setTranscription('Error transcribing audio. Please try again or type your idea manually.');
     }
+  }, []);
+
+  // Create a combined audio blob from chunks for better compatibility with mobile devices
+  const createAudioBlobFromChunks = useCallback(() => {
+    if (audioChunksRef.current.length === 0) {
+      console.warn("No audio chunks available to create blob");
+      return null;
+    }
+    
+    // Try to determine the type from the first chunk
+    const firstChunkType = audioChunksRef.current[0].type;
+    let blobType = firstChunkType || 'audio/webm;codecs=opus';
+    
+    // Some mobile browsers may use different MIME types
+    if (blobType.includes('audio/wav')) {
+      blobType = 'audio/wav';
+    } else if (blobType.includes('audio/mp4') || blobType.includes('audio/mp4a')) {
+      blobType = 'audio/mp4';
+    } else if (blobType.includes('audio/mpeg') || blobType.includes('audio/mp3')) {
+      blobType = 'audio/mpeg';
+    }
+    
+    console.log(`Creating audio blob from ${audioChunksRef.current.length} chunks with type: ${blobType}`);
+    
+    return new Blob(audioChunksRef.current, { type: blobType });
   }, []);
 
   const processIdea = async () => {
@@ -205,13 +291,43 @@ Your output should be positive, insightful, and focused on possibilities. Make t
     URL.revokeObjectURL(url);
   };
 
+  // Process the recording when mediaBlobUrl changes
   useEffect(() => {
+    if (mediaRecorderError) {
+      setRecordingError(`Recording error: ${mediaRecorderError}`);
+      return;
+    }
+    
     if (mediaBlobUrl) {
+      // Try first with the mediaBlobUrl
       fetch(mediaBlobUrl)
         .then(response => response.blob())
-        .then(blob => transcribeAudio(blob));
+        .then(blob => {
+          // If the blob from mediaBlobUrl is too small or empty, try combining chunks
+          if (!blob || blob.size < 100) {
+            console.log("MediaBlobUrl provided an empty or very small blob, trying audio chunks");
+            const chunkedBlob = createAudioBlobFromChunks();
+            if (chunkedBlob && chunkedBlob.size > 100) {
+              return transcribeAudio(chunkedBlob);
+            } else {
+              throw new Error("Unable to create valid audio recording");
+            }
+          }
+          return transcribeAudio(blob);
+        })
+        .catch(err => {
+          console.error("Error processing audio recording:", err);
+          
+          // If mediaBlobUrl approach fails, fall back to the audio chunks method
+          const chunkedBlob = createAudioBlobFromChunks();
+          if (chunkedBlob && chunkedBlob.size > 100) {
+            transcribeAudio(chunkedBlob);
+          } else {
+            setRecordingError("Failed to process recording. Please try again or type your idea manually.");
+          }
+        });
     }
-  }, [mediaBlobUrl, transcribeAudio]);
+  }, [mediaBlobUrl, transcribeAudio, mediaRecorderError, createAudioBlobFromChunks]);
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -279,8 +395,15 @@ Your output should be positive, insightful, and focused on possibilities. Make t
                       value={transcription}
                       onChange={(e) => setTranscription(e.target.value)}
                       className="w-full h-48 px-4 py-2 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-custom-blue focus:border-transparent transition-colors"
-                      placeholder="Your transcribed text will appear here..."
+                      placeholder="Your transcribed text will appear here... If recording doesn't work, you can type your idea directly."
                     />
+
+                    {recordingError && (
+                      <div className="mt-2 text-red-400 text-sm">
+                        {recordingError}
+                        <p className="mt-1">You can still type your idea directly in the text area above.</p>
+                      </div>
+                    )}
 
                     <div className="flex flex-wrap gap-2 sm:gap-4 mt-4">
                       <button
